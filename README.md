@@ -18,7 +18,8 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | File | Isi | Status |
 |---|---|---|
 | `sql/migrations/001_finance_foundation.sql` | Schema finance, COA, budget, jurnal, invoice, jadwal bayar, view 3-way match & Budget vs Actual | ✅ Sudah dijalankan (26 Nov 2026) |
-| `sql/migrations/002_auto_journal.sql` | Trigger jurnal otomatis (penerimaan vendor, serah terima, retur, invoice, pembayaran) + backfill | Draft, sudah diuji penuh (rollback), belum dijalankan |
+| `sql/migrations/002_auto_journal.sql` | Trigger jurnal otomatis (penerimaan vendor, serah terima, retur, invoice, pembayaran) + backfill | ✅ Sudah dijalankan (26 Nov 2026) |
+| `sql/migrations/003_fixed_asset.sql` | Register aset tetap per unit (otomatis dari SMMS) + penyusutan bulanan | Draft, sudah diuji (rollback), belum dijalankan |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -44,7 +45,7 @@ Klasifikasi saat barang diterima dari vendor:
 | Tools / Heavy Equipment **beli**, harga/unit ≥ batas kapitalisasi | `Duration` kosong | 1-2100 Aset Tetap |
 | Tools / Heavy Equipment **beli**, harga/unit < batas kapitalisasi | `Duration` kosong | 5-1250 Beban Peralatan Kecil |
 
-Batas kapitalisasi disimpan di `finance.setting` (key `capitalization_threshold`), saat ini 0 dan **wajib ditetapkan akuntan**. Register aset & penyusutan bulanan: fase berikutnya.
+Batas kapitalisasi disimpan di `finance.setting` (key `capitalization_threshold`), saat ini 0 dan **wajib ditetapkan akuntan**. Register aset & penyusutan bulanan: migration 003.
 
 Kalau data SMMS diedit atau dihapus: jurnal yang masih DRAFT ikut diperbarui atau di-VOID, sedangkan jurnal yang sudah POSTED tidak diubah. Untuk yang POSTED, sistem membuat jurnal penyesuaian sebesar selisihnya. Error di trigger tidak pernah menggagalkan transaksi SMMS; error dicatat di `finance.auto_journal_error`.
 
@@ -54,3 +55,12 @@ Kalau data SMMS diedit atau dihapus: jurnal yang masih DRAFT ikut diperbarui ata
 2. Nilai komitmen PO memakai subtotal sebelum PPN.
 3. Penanda sewa vs beli untuk Tools/Heavy Equipment = kolom `Duration` di Request (dikonfirmasi 26 Nov 2026).
 4. Nomor & nama akun COA masih contoh dan **wajib direview akuntan/konsultan pajak**.
+
+### Register aset & penyusutan (migration 003)
+
+1. Tools/HE yang **dibeli** dan masuk Aset Tetap: saat diterima di SMMS, SmartFin otomatis membuat **1 kartu aset per unit** dengan status `PERLU_DILENGKAPI`. Datanya ditarik dari SMMS: item, kode item, PO, vendor, tanggal terima, harga, proyek, dan site.
+2. Finance mengisi **kategori** (KEL1–KEL4, yang memberi umur default), lalu bisa mengubah umur, nilai sisa, dan metode. Setelah lengkap, status otomatis jadi `AKTIF`.
+3. Penyusutan mulai **bulan berikutnya** setelah tanggal terima. Jalankan `finance.run_depreciation('YYYY-MM-01')` tiap akhir bulan; aman dijalankan ulang. Hasilnya jurnal DRAFT: Dr 6-1300 Beban Penyusutan / Cr 1-2900 Akumulasi, per proyek.
+4. Kalau qty penerimaan di SMMS dikurangi atau dihapus: unit yang belum disusutkan ikut dihapus, sedangkan unit yang sudah disusutkan ditandai `PERLU_DICEK`.
+
+Umur KEL1–KEL4 (4/8/16/20 tahun) mengacu ke kelompok harta fiskal UU PPh. Penggolongan tiap alat dan umur komersialnya **wajib dicek akuntan**.
