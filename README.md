@@ -20,7 +20,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/001_finance_foundation.sql` | Schema finance, COA, budget, jurnal, invoice, jadwal bayar, view 3-way match & Budget vs Actual | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/002_auto_journal.sql` | Trigger jurnal otomatis (penerimaan vendor, serah terima, retur, invoice, pembayaran) + backfill | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/003_fixed_asset.sql` | Register aset tetap per unit (otomatis dari SMMS) + penyusutan bulanan | ✅ Sudah dijalankan (26 Nov 2026) |
-| `sql/migrations/004_auth_api.sql` | Login SmartFin (PIC = menu, Author = approval) + API `fin_*` untuk halaman web | Draft, sudah diuji (rollback), belum dijalankan |
+| `sql/migrations/004_auth_api.sql` | Login SmartFin (PIC = menu, Author = approval) + API `fin_*` untuk halaman web | ✅ Sudah dijalankan (26 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -85,3 +85,13 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | | `APY` | Approve pembayaran |
 
 Web hanya memanggil fungsi `public.fin_*`. Setiap fungsi mengecek token sesi (8 jam), PIC, dan Author di server, sedangkan tabel `finance` tetap tertutup untuk akses langsung.
+
+## Halaman web
+
+| File | Isi |
+|---|---|
+| `index.html` | Login + halaman Dashboard, Hutang Vendor, Jurnal, Budget vs Actual, Aset Tetap |
+| `app.js` | Logika halaman. Semua data lewat API `fin_*`, hanya memakai publishable key |
+| `style.css` | Tampilan (warna BIMA) |
+
+Menu yang muncul mengikuti PIC akun. Tombol approval (Posting, Approve) hanya muncul untuk pemegang Author yang sesuai, dan tetap dicek ulang di server.
