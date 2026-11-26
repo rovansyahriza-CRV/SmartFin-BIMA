@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>SmartFin BIMA — Dashboard Keuangan</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#2b2b2b;background:#f6f4f1}
+a{color:#b8401c;text-decoration:none}a:hover{color:#8f2f12}
+h1,h2,h3{font-family:'Space Grotesk',Inter,sans-serif;margin:0}
+td,th{padding:10px 12px;text-align:left;font-size:13px;border-bottom:1px solid #ece8e3}
+th{font-size:12px;color:#5f5a55;font-weight:600}
+</style>
+</head>
+<body>
+<div style="display:flex;flex-wrap:wrap;min-height:100vh;background:#f6f4f1">
+
+<aside style="flex:1 1 220px;max-width:260px;background:#3d3d3d;color:#f2efeb;padding:24px 16px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:center;gap:10px;padding:0 8px">
+<div style="width:52px;height:52px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="logo-bima.png" alt="Logo BIMA — Bilal Mitra Aryatama" style="width:44px;height:44px;object-fit:contain"></div>
+<div><div style="font-family:'Space Grotesk';font-weight:700;font-size:18px">SmartFin</div><div style="font-size:11px;color:#c9c4be">BIMA · Financial System</div></div>
+</div>
+<nav style="display:flex;flex-direction:column;gap:2px;font-size:14px">
+<a href="#" style="color:#fff;background:#525252;border-radius:8px;padding:10px 12px;font-weight:600">Dashboard</a>
+<a href="#" style="color:#e4e0db;padding:10px 12px">Hutang Vendor (AP)</a>
+<a href="#" style="color:#e4e0db;padding:10px 12px">Budget vs Actual</a>
+<a href="#" style="color:#e4e0db;padding:10px 12px">Kas &amp; Bank</a>
+<a href="#" style="color:#e4e0db;padding:10px 12px">Petty Cash</a>
+<a href="#" style="color:#e4e0db;padding:10px 12px">Jurnal &amp; GL</a>
+<a href="#" style="color:#e4e0db;padding:10px 12px">Piutang Klien (AR)</a>
+<a href="#" style="color:#e4e0db;padding:10px 12px">Laporan &amp; Pajak</a>
+</nav>
+<div style="margin-top:auto;font-size:12px;color:#c9c4be;padding:0 8px;line-height:1.5">Terhubung ke<br><span style="color:#fff">SMMS · Fusion4 SmartGate</span></div>
+</aside>
+
+<main style="flex:999 1 560px;min-width:0;padding:32px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px">
+
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px">
+<div><h1 style="font-size:28px">Dashboard Keuangan</h1><div style="font-size:13px;color:#5f5a55;margin-top:4px">Periode November 2026 · data dummy (belum tersambung ke database)</div></div>
+<div style="display:flex;flex-wrap:wrap;gap:10px">
+<button type="button" style="min-height:44px;padding:0 16px;border:1px solid #d6d0c9;background:#fff;border-radius:8px;font:600 14px Inter;color:#2b2b2b">+ Petty Cash</button>
+<button type="button" style="min-height:44px;padding:0 16px;border:0;background:#c2410c;border-radius:8px;font:600 14px Inter;color:#fff">Approve Jurnal (7)</button>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+<div style="background:#fff;border-radius:12px;padding:20px;border:1px solid #ece8e3"><div style="font-size:12px;color:#5f5a55;font-weight:600">Hutang jatuh tempo ≤ 7 hari</div><div style="font:700 26px 'Space Grotesk';margin-top:8px">Rp 412,5 jt</div><div style="font-size:12px;color:#b8401c;margin-top:6px">9 invoice · 2 selisih 3-way match</div></div>
+<div style="background:#fff;border-radius:12px;padding:20px;border:1px solid #ece8e3"><div style="font-size:12px;color:#5f5a55;font-weight:600">Budget proyek terpakai</div><div style="font:700 26px 'Space Grotesk';margin-top:8px">68%</div><div style="font-size:12px;color:#5f5a55;margin-top:6px">Rp 3,26 M dari Rp 4,80 M</div></div>
+<div style="background:#fff;border-radius:12px;padding:20px;border:1px solid #ece8e3"><div style="font-size:12px;color:#5f5a55;font-weight:600">Saldo Kas &amp; Bank</div><div style="font:700 26px 'Space Grotesk';margin-top:8px">Rp 1,74 M</div><div style="font-size:12px;color:#5f5a55;margin-top:6px">3 rekening · rekonsiliasi 28 Nov</div></div>
+<div style="background:#fff;border-radius:12px;padding:20px;border:1px solid #ece8e3"><div style="font-size:12px;color:#5f5a55;font-weight:600">Saldo Petty Cash (semua site)</div><div style="font:700 26px 'Space Grotesk';margin-top:8px">Rp 38,2 jt</div><div style="font-size:12px;color:#b8401c;margin-top:6px">1 site perlu replenish</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px">
+<section style="background:#fff;border-radius:12px;padding:20px;border:1px solid #ece8e3;display:flex;flex-direction:column;gap:12px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="font-size:17px">Budget vs Actual per Proyek</h2><a href="#" style="font-size:13px;font-weight:600">Lihat semua</a></div>
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+<tr><th>Proyek / WO</th><th>RAB</th><th>Realisasi</th><th style="width:34%">Terpakai</th></tr>
+<tr><td><b>PRJ-2601</b> Maintenance Site A</td><td>Rp 1,80 M</td><td>Rp 1,62 M</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#f0ebe6;border-radius:4px"><div style="width:90%;height:8px;background:#b8401c;border-radius:4px"></div></div><span style="font-size:12px;font-weight:600;color:#b8401c">90%</span></div></td></tr>
+<tr><td><b>PRJ-2602</b> Civil Works Site B</td><td>Rp 2,10 M</td><td>Rp 1,26 M</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#f0ebe6;border-radius:4px"><div style="width:60%;height:8px;background:#6b6560;border-radius:4px"></div></div><span style="font-size:12px;font-weight:600">60%</span></div></td></tr>
+<tr><td><b>PRJ-2603</b> Struktur Site C</td><td>Rp 0,90 M</td><td>Rp 0,38 M</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#f0ebe6;border-radius:4px"><div style="width:42%;height:8px;background:#6b6560;border-radius:4px"></div></div><span style="font-size:12px;font-weight:600">42%</span></div></td></tr>
+</table></div>
+<div style="font-size:12px;color:#5f5a55">Realisasi = material diserahkan ke end user (SMMS) + biaya manpower (Fusion4) + petty cash</div>
+</section>
+
+<section style="background:#fff;border-radius:12px;padding:20px;border:1px solid #ece8e3;display:flex;flex-direction:column;gap:12px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="font-size:17px">Hutang Vendor Jatuh Tempo</h2><a href="#" style="font-size:13px;font-weight:600">Buka AP</a></div>
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+<tr><th>Vendor / PO</th><th>Termin</th><th>Jatuh tempo</th><th>Nilai</th><th>3-way match</th></tr>
+<tr><td><b>CV Vendor Satu</b><br><span style="color:#5f5a55">PO-202611-0012</span></td><td>30 Days After Invoice</td><td>28 Nov</td><td>Rp 148,0 jt</td><td><span style="background:#e7f2ea;color:#1f6b3a;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600">Cocok</span></td></tr>
+<tr><td><b>PT Vendor Dua</b><br><span style="color:#5f5a55">PO-202611-0015</span></td><td>Partial (DP 30%)</td><td>29 Nov</td><td>Rp 96,5 jt</td><td><span style="background:#fbe7df;color:#9a3412;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600">Qty selisih</span></td></tr>
+<tr><td><b>UD Vendor Tiga</b><br><span style="color:#5f5a55">SO-202611-0004</span></td><td>Back to Back</td><td>2 Des</td><td>Rp 168,0 jt</td><td><span style="background:#efedea;color:#4a4540;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600">Tunggu invoice</span></td></tr>
+</table></div>
+</section>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px">
+<section style="background:#fff;border-radius:12px;padding:20px;border:1px solid #ece8e3;display:flex;flex-direction:column;gap:12px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="font-size:17px">Jurnal Draft Menunggu Approve</h2><a href="#" style="font-size:13px;font-weight:600">7 jurnal</a></div>
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+<tr><th>Sumber</th><th>Keterangan</th><th>Nilai</th><th></th></tr>
+<tr><td><span style="background:#e4ecf7;color:#1e4a80;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600">SMMS</span></td><td>Barang diterima PO-202611-0012 → Hutang vendor</td><td>Rp 148,0 jt</td><td><button type="button" style="min-height:36px;padding:0 12px;border:1px solid #d6d0c9;background:#fff;border-radius:8px;font:600 13px Inter">Approve</button></td></tr>
+<tr><td><span style="background:#ede7f6;color:#4b2d84;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600">Fusion4</span></td><td>Payroll November → Beban gaji, BPJS, PPh 21</td><td>Rp 612,4 jt</td><td><button type="button" style="min-height:36px;padding:0 12px;border:1px solid #d6d0c9;background:#fff;border-radius:8px;font:600 13px Inter">Approve</button></td></tr>
+<tr><td><span style="background:#f3ece4;color:#7a4a1c;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600">Petty Cash</span></td><td>BBM genset Site B · foto nota terlampir</td><td>Rp 2,35 jt</td><td><button type="button" style="min-height:36px;padding:0 12px;border:1px solid #d6d0c9;background:#fff;border-radius:8px;font:600 13px Inter">Approve</button></td></tr>
+</table></div>
+</section>
+
+<section style="background:#fff;border-radius:12px;padding:20px;border:1px solid #ece8e3;display:flex;flex-direction:column;gap:14px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="font-size:17px">Petty Cash per Site</h2><a href="#" style="font-size:13px;font-weight:600">Kelola</a></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px"><span><b>Site A</b> · PIC [Nama PIC]</span><span>Rp 14,8 jt / 20 jt</span></div><div style="height:8px;background:#f0ebe6;border-radius:4px"><div style="width:74%;height:8px;background:#6b6560;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px"><span><b>Site B</b> · PIC [Nama PIC]</span><span style="color:#b8401c;font-weight:600">Rp 3,4 jt / 20 jt · Replenish</span></div><div style="height:8px;background:#f0ebe6;border-radius:4px"><div style="width:17%;height:8px;background:#b8401c;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px"><span><b>Site C</b> · PIC [Nama PIC]</span><span>Rp 20,0 jt / 25 jt</span></div><div style="height:8px;background:#f0ebe6;border-radius:4px"><div style="width:80%;height:8px;background:#6b6560;border-radius:4px"></div></div></div>
+<button type="button" style="align-self:flex-start;min-height:44px;padding:0 16px;border:1px solid #d6d0c9;background:#fff;border-radius:8px;font:600 14px Inter;color:#2b2b2b">Ajukan Replenish Site B</button>
+</section>
+</div>
+
+</main>
+</div>
+</body>
+</html>
