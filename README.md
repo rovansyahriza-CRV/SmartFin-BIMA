@@ -19,7 +19,8 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 |---|---|---|
 | `sql/migrations/001_finance_foundation.sql` | Schema finance, COA, budget, jurnal, invoice, jadwal bayar, view 3-way match & Budget vs Actual | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/002_auto_journal.sql` | Trigger jurnal otomatis (penerimaan vendor, serah terima, retur, invoice, pembayaran) + backfill | ✅ Sudah dijalankan (26 Nov 2026) |
-| `sql/migrations/003_fixed_asset.sql` | Register aset tetap per unit (otomatis dari SMMS) + penyusutan bulanan | Draft, sudah diuji (rollback), belum dijalankan |
+| `sql/migrations/003_fixed_asset.sql` | Register aset tetap per unit (otomatis dari SMMS) + penyusutan bulanan | ✅ Sudah dijalankan (26 Nov 2026) |
+| `sql/migrations/004_auth_api.sql` | Login SmartFin (PIC = menu, Author = approval) + API `fin_*` untuk halaman web | Draft, sudah diuji (rollback), belum dijalankan |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -64,3 +65,23 @@ Kalau data SMMS diedit atau dihapus: jurnal yang masih DRAFT ikut diperbarui ata
 4. Kalau qty penerimaan di SMMS dikurangi atau dihapus: unit yang belum disusutkan ikut dihapus, sedangkan unit yang sudah disusutkan ditandai `PERLU_DICEK`.
 
 Umur KEL1–KEL4 (4/8/16/20 tahun) mengacu ke kelompok harta fiskal UU PPh. Penggolongan tiap alat dan umur komersialnya **wajib dicek akuntan**.
+
+### Hak akses SmartFin (migration 004)
+
+Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
+
+| Kolom | Kode | Arti |
+|---|---|---|
+| PIC (menu) | `FIN` | Dashboard |
+| | `FIN-AP` | Hutang vendor & invoice |
+| | `FIN-JV` | Jurnal |
+| | `FIN-BVA` | Budget vs Actual / RAB |
+| | `FIN-AST` | Aset tetap |
+| | `FIN-ALL` | Semua menu SmartFin |
+| PIC / Author | `ALL` | **Super admin**: semua menu + semua approval (AI, PJ, AB, APY). Saat trial hanya 1 admin |
+| Author (approval) | `AI` / `AI-014` | Approve invoice, untuk semua proyek atau hanya proyek 014 |
+| | `PJ` | Posting jurnal |
+| | `AB` | Approve budget/RAB |
+| | `APY` | Approve pembayaran |
+
+Web hanya memanggil fungsi `public.fin_*`. Setiap fungsi mengecek token sesi (8 jam), PIC, dan Author di server, sedangkan tabel `finance` tetap tertutup untuk akses langsung.
