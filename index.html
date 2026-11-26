@@ -13,17 +13,44 @@
 
 <!-- ============ LOGIN ============ -->
 <div id="loginView" class="login-wrap">
-  <form id="loginForm" class="login-card" autocomplete="off">
-    <img src="logo-bima.png" alt="Logo BIMA — Bilal Mitra Aryatama" class="login-logo">
-    <h1>SmartFin</h1>
-    <p class="muted">Smart Financial System · Bilal Mitra Aryatama</p>
-    <label for="loginUser">Nama</label>
-    <select id="loginUser" required><option value="">Memuat akun…</option></select>
-    <label for="loginPass">Password</label>
-    <input id="loginPass" type="password" required>
-    <button type="submit" class="btn primary block" id="loginBtn">Masuk</button>
-    <p id="loginMsg" class="error-text" role="alert"></p>
-  </form>
+  <div class="login-shell">
+    <div class="login-brand">
+      <div class="lb-logo"><img src="logo-bima.png" alt="Logo BIMA — Bilal Mitra Aryatama"></div>
+      <div class="lb-title">SmartFin</div>
+      <div class="lb-sub">Smart Financial System<br>Bilal Mitra Aryatama</div>
+      <ul class="lb-points">
+        <li>Jurnal otomatis dari SMMS</li>
+        <li>3-way match hutang vendor</li>
+        <li>Budget vs Actual per proyek</li>
+        <li>Register aset &amp; penyusutan</li>
+      </ul>
+      <div class="lb-foot">Terhubung ke SMMS · Fusion4 SmartGate</div>
+    </div>
+
+    <form id="loginForm" class="login-form" autocomplete="off">
+      <div class="lf-badge">Akses Terbatas · Tim Finance</div>
+      <h1>Masuk ke SmartFin</h1>
+      <p class="muted">Gunakan akun yang sama dengan SMMS / Fusion4.</p>
+
+      <label for="loginSearch">Nama</label>
+      <div class="combo" id="combo">
+        <input id="loginSearch" type="text" role="combobox" aria-expanded="false" aria-controls="loginList"
+               aria-autocomplete="list" placeholder="Ketik untuk mencari nama…" required>
+        <ul id="loginList" role="listbox" hidden></ul>
+      </div>
+      <input type="hidden" id="loginUser">
+
+      <label for="loginPass">Password</label>
+      <div class="pass-wrap">
+        <input id="loginPass" type="password" required>
+        <button type="button" id="togglePass" class="pass-toggle" aria-label="Tampilkan password">Lihat</button>
+      </div>
+
+      <button type="submit" class="btn primary block" id="loginBtn">Masuk</button>
+      <p id="loginMsg" class="error-text" role="alert"></p>
+      <p class="lf-note">Sesi berlaku 8 jam. Akun terkunci 15 menit setelah 5x salah password.</p>
+    </form>
+  </div>
 </div>
 
 <!-- ============ APP ============ -->

@@ -67,21 +67,67 @@ function statusBadge(s) {
 const emptyRow = (cols, text) => `<tr><td colspan="${cols}" class="empty">${esc(text)}</td></tr>`;
 
 // ---------- login ----------
+let accounts = [];
+let activeIdx = -1;
+const initials = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+
 async function loadAccounts() {
+  $('loginSearch').value = ''; $('loginUser').value = ''; $('loginSearch').classList.remove('picked');
   try {
-    const rows = await rpc('fin_login_accounts');
-    $('loginUser').innerHTML = '<option value="">Pilih nama…</option>' +
-      (rows || []).map((r) => `<option value="${esc(r.id)}">${esc(r.nama)}</option>`).join('');
-    if (!rows || !rows.length) $('loginMsg').textContent = 'Belum ada akun dengan akses SmartFin (PIC FIN / FIN-ALL / ALL).';
+    accounts = (await rpc('fin_login_accounts')) || [];
+    $('loginSearch').placeholder = accounts.length ? 'Ketik untuk mencari nama…' : 'Belum ada akun SmartFin';
+    if (!accounts.length) $('loginMsg').textContent = 'Belum ada akun dengan akses SmartFin (PIC FIN / FIN-ALL / ALL).';
   } catch (e) {
-    $('loginUser').innerHTML = '<option value="">Gagal memuat akun</option>';
+    $('loginSearch').placeholder = 'Gagal memuat akun';
     $('loginMsg').textContent = 'Tidak bisa terhubung ke server: ' + e.message;
   }
 }
+function renderAccountList() {
+  const q = $('loginSearch').value.trim().toLowerCase();
+  const list = accounts.filter((a) => !q || String(a.nama).toLowerCase().includes(q)).slice(0, 8);
+  activeIdx = list.length ? 0 : -1;
+  $('loginList').innerHTML = list.length
+    ? list.map((a, i) => `<li role="option" id="opt-${esc(a.id)}" data-id="${esc(a.id)}" data-nama="${esc(a.nama)}" aria-selected="${i === 0}"><span class="av">${esc(initials(a.nama))}</span>${esc(a.nama)}</li>`).join('')
+    : '<li class="none">Nama tidak ditemukan</li>';
+  $('loginList').hidden = false;
+  $('loginSearch').setAttribute('aria-expanded', 'true');
+}
+function closeAccountList() { $('loginList').hidden = true; $('loginSearch').setAttribute('aria-expanded', 'false'); }
+function pickAccount(li) {
+  if (!li || !li.dataset.id) return;
+  $('loginUser').value = li.dataset.id;
+  $('loginSearch').value = li.dataset.nama;
+  $('loginSearch').classList.add('picked');
+  closeAccountList();
+  $('loginPass').focus();
+}
+$('loginSearch').addEventListener('input', () => { $('loginUser').value = ''; $('loginSearch').classList.remove('picked'); renderAccountList(); });
+$('loginSearch').addEventListener('focus', renderAccountList);
+$('loginSearch').addEventListener('keydown', (ev) => {
+  const items = [...$('loginList').querySelectorAll('li[data-id]')];
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+    ev.preventDefault();
+    if (!items.length) return;
+    activeIdx = (activeIdx + (ev.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items.forEach((li, i) => li.setAttribute('aria-selected', String(i === activeIdx)));
+    items[activeIdx].scrollIntoView({ block: 'nearest' });
+  } else if (ev.key === 'Enter' && !$('loginList').hidden) {
+    ev.preventDefault(); pickAccount(items[activeIdx]);
+  } else if (ev.key === 'Escape') closeAccountList();
+});
+$('loginList').addEventListener('mousedown', (ev) => { ev.preventDefault(); pickAccount(ev.target.closest('li')); });
+$('loginSearch').addEventListener('blur', () => setTimeout(closeAccountList, 120));
+$('togglePass').addEventListener('click', () => {
+  const show = $('loginPass').type === 'password';
+  $('loginPass').type = show ? 'text' : 'password';
+  $('togglePass').textContent = show ? 'Sembunyikan' : 'Lihat';
+  $('togglePass').setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
+});
 
 $('loginForm').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   $('loginMsg').textContent = '';
+  if (!$('loginUser').value) { $('loginMsg').textContent = 'Pilih nama dari daftar dulu.'; $('loginSearch').focus(); return; }
   $('loginBtn').disabled = true;
   try {
     const r = await rpc('fin_login', { p_id: Number($('loginUser').value), p_password: $('loginPass').value });
