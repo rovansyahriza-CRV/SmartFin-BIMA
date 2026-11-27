@@ -24,6 +24,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/005_payment.sql` | Rekening bank, termin vendor, jadwal & approval pembayaran (APY), biaya tambahan invoice | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/006_documents.sql` | Checklist & upload dokumen invoice (Gate A uang muka, Gate B invoice), invoice HOLD kalau dokumen belum lengkap | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/007_payment_doc_hold.sql` | Pembayaran HOLD kalau dokumen belum lengkap, hand over dihitung sebagai bukti terima site | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/008_cash.sql` | Petty cash site, pengeluaran langsung tanpa PO, kasbon karyawan, hak akses FIN-PC & APC | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -80,12 +81,14 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | | `FIN-JV` | Jurnal |
 | | `FIN-BVA` | Budget vs Actual / RAB |
 | | `FIN-AST` | Aset tetap |
+| | `FIN-PC` | Kas & Kasbon: pemegang kas site input nota, ajukan isi kas / kasbon (migration 008) |
 | | `FIN-ALL` | Semua menu SmartFin |
-| PIC / Author | `ALL` | **Super admin**: semua menu + semua approval (AI, PJ, AB, APY). Saat trial hanya 1 admin |
+| PIC / Author | `ALL` | **Super admin**: semua menu + semua approval (AI, PJ, AB, APY, APC). Saat trial hanya 1 admin |
 | Author (approval) | `AI` / `AI-014` | Approve invoice, untuk semua proyek atau hanya proyek 014 |
 | | `PJ` | Posting jurnal |
 | | `AB` | Approve budget/RAB |
-| | `APY` | Approve pembayaran |
+| | `APY` | Approve pembayaran, isi kas site, pengeluaran langsung, kasbon |
+| | `APC` / `APC-014` | Approve nota petty cash & nota kasbon (migration 008) |
 
 Web hanya memanggil fungsi `public.fin_*`. Setiap fungsi mengecek token sesi (8 jam), PIC, dan Author di server, sedangkan tabel `finance` tetap tertutup untuk akses langsung.
 
@@ -149,4 +152,22 @@ Serah terima belum diminta di tahap uang muka.
 - **Pembayaran ikut HOLD (migration 007):** jadwal pelunasan tidak bisa disetujui APY maupun ditandai lunas selama checklist Gate B invoice-nya belum lengkap (berlaku juga untuk invoice lama). Uang muka memakai Gate A.
 - Bukti terima site dianggap ada kalau sudah ada Site Receiving **atau** Hand over di SMMS. Kalau belum, checklist menampilkan no. surat jalan dan site tujuan yang belum dikonfirmasi.
 - File maksimal 10 MB. Bridge Drive (Apps Script "BIMA Drive Bridge") menyimpan dokumen di `SMMS-BIMA-Files/finance/yyyy-MM` **tanpa** link publik, jadi hanya akun yang diberi akses ke folder `finance` yang bisa membuka file.
+
+### Kas & Kasbon (migration 008)
+
+| Alur | Siapa | Jurnal otomatis |
+|---|---|---|
+| Kas site baru (plafon & batas per nota diisi manual) | FIN-AP | Sub-akun `1-11xx` dibuat otomatis |
+| Isi kas site dari bank HO | Diajukan pemegang kas / FIN-AP → **APY** → FIN-AP tandai dibayar | Dr Kas Site / Cr Bank |
+| Nota kas site + foto nota | Pemegang kas (FIN-PC) → **APC** | Dr Beban (+PPN Masukan) / Cr Kas Site |
+| Pengeluaran langsung tanpa PO (listrik, sewa, BPJS, reimburse) | FIN-AP + nota/tagihan → **APY** → dibayar | Dr Beban (+PPN) / Cr Bank (+Hutang PPh 23) |
+| Kasbon karyawan | Karyawan / pemegang kas / FIN-AP → **APY** → dibayar | Dr Uang Muka Karyawan `1-1700` / Cr Bank |
+| Nota kasbon + foto nota | Penerima kasbon → **APC** | Dr Beban / Cr Uang Muka Karyawan |
+| Tutup kasbon | FIN-AP | Sisa dikembalikan: Dr Bank / Cr 1-1700 · kekurangan dibayar: Dr 1-1700 / Cr Bank |
+
+- Nota di atas **batas per nota** ditolak (harus lewat PO di SMMS). Nota juga ditolak kalau saldo kas tidak cukup.
+- Isi kas tidak boleh membuat saldo melebihi **plafon**; form isi kas otomatis menyarankan nilai sampai plafon.
+- Foto nota wajib (faktur pajak wajib kalau ada PPN). Tanpa dokumen, nota tidak bisa disetujui APC dan pengeluaran langsung HOLD.
+- Pemegang kas (hanya FIN-PC) cuma melihat kas, nota, dan kasbon miliknya. FIN-AP, APC, dan APY melihat semuanya.
+- Nota yang disetujui dan pengeluaran langsung yang dibayar masuk ke **komitmen & realisasi Budget vs Actual** proyeknya.
 

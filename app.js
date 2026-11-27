@@ -174,7 +174,10 @@ function startApp() {
 
 function go(page) {
   const link = document.querySelector(`#nav a[data-page="${page}"]`);
-  if (!link || link.hidden) page = 'dashboard';
+  if (!link || link.hidden) {
+    const first = document.querySelector('#nav a:not([hidden])');
+    page = first ? first.dataset.page : 'dashboard';
+  }
   document.querySelectorAll('.page').forEach((s) => { s.hidden = s.id !== 'page-' + page; });
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.page === page));
   loaders[page]();
@@ -426,7 +429,7 @@ async function attachDocument(gate, refId, docType, file, refNo, bond) {
 let docCtx = null;
 async function openDocs(gate, refId, title) {
   docCtx = { gate, refId, title };
-  $('docTitle').textContent = gate === 'ADVANCE' ? 'Dokumen Uang Muka (Gate A)' : 'Dokumen Invoice (Gate B)';
+  $('docTitle').textContent = { ADVANCE: 'Dokumen Uang Muka (Gate A)', INVOICE: 'Dokumen Invoice (Gate B)', NOTA: 'Dokumen Nota', DIRECT: 'Dokumen Pengeluaran Langsung' }[gate];
   $('docInfo').textContent = title;
   $('docMsg').textContent = '';
   $('docList').innerHTML = '<p class="muted">Memuat…</p>';
@@ -455,7 +458,7 @@ async function openDocs(gate, refId, title) {
     }).join('') + `<p class="small ${d.missing ? 'overdue' : 'muted'}">${d.missing ? 'Belum lengkap: ' + esc(d.missing) : 'Semua dokumen wajib sudah lengkap ✓'}</p>`;
   } catch (e) { $('docList').innerHTML = ''; $('docMsg').textContent = e.message; }
 }
-$('docClose').addEventListener('click', () => { $('docDialog').close(); if (docCtx) ((location.hash.slice(1) === 'bayar') ? loadBayar : loadAP)(); });
+$('docClose').addEventListener('click', () => { $('docDialog').close(); if (docCtx) (loaders[location.hash.slice(1)] || loadAP)(); });
 $('docList').addEventListener('click', async (ev) => {
   const ub = ev.target.closest('[data-upload]');
   if (ub) {
@@ -687,7 +690,290 @@ $('runDepBtn').addEventListener('click', async () => {
   } catch (e) { toast(e.message, true); }
 });
 
-const loaders = { dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
+// ---------- kas & kasbon ----------
+const CASH_STATUS = { PLANNED: ['Menunggu APY', 'warn'], APPROVED: ['Disetujui', 'info'], PAID: ['Dibayar', 'ok'], CLOSED: ['Selesai', 'ok'],
+  REJECTED: ['Ditolak', ''], CANCELLED: ['Batal', ''], SUBMITTED: ['Menunggu APC', 'warn'] };
+const cashBadge = (s, label) => { const [t, c] = CASH_STATUS[s] || [s, '']; return `<span class="badge ${c}">${esc(label || t)}</span>`; };
+const KIND_LABEL = { TOPUP: 'Isi kas site', DIRECT: 'Pengeluaran langsung', KASBON: 'Kasbon' };
+const canHO = () => hasPic('fin-ap');
+
+async function loadKas() {
+  try {
+    const d = await api('fin_cash_overview');
+    cache.kas = d;
+    $('newDirectBtn').hidden = !d.isHO;
+    $('newFundBtn').hidden = !d.isHO;
+    const sum = (arr, f) => arr.reduce((t, x) => t + num(f(x)), 0);
+    const pendingNotes = d.expenses.filter((e) => e.status === 'SUBMITTED');
+    const pendingReq = d.requests.filter((r) => r.status === 'PLANNED');
+    const kasbonOpen = d.requests.filter((r) => r.kind === 'KASBON' && r.status === 'PAID');
+    const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
+    $('kasKpis').innerHTML =
+      kpi('Saldo kas site', rpShort(sum(d.funds, (f) => f.balance)), `${d.funds.filter((f) => f.is_active).length} kas aktif`) +
+      kpi('Nota menunggu APC', rpShort(sum(pendingNotes, (e) => e.amount)), `${pendingNotes.length} nota`, pendingNotes.length > 0) +
+      kpi('Pengajuan menunggu APY', rpShort(sum(pendingReq, (r) => r.amount)), `${pendingReq.length} pengajuan`, pendingReq.length > 0) +
+      kpi('Kasbon belum selesai', rpShort(sum(kasbonOpen, (r) => num(r.paid_amount) - num(r.settled))), `${kasbonOpen.length} kasbon`);
+
+    // kas site
+    $('fundTable').innerHTML = '<tr><th>Kas</th><th>Pemegang</th><th>Saldo / plafon</th><th class="num">Batas per nota</th><th>Menunggu</th><th></th></tr>' +
+      (d.funds.length ? d.funds.map((f) => {
+        const pct = Math.max(0, Math.min(100, num(f.balance) / num(f.ceiling) * 100));
+        const own = f.custodian_id === d.me || d.isHO;
+        const topup = Math.max(0, num(f.ceiling) - num(f.balance) - num(f.pending_topup));
+        const acts = [
+          own && f.is_active ? `<button type="button" class="btn primary small" data-nota-fund="${esc(f.fund_id)}">+ Nota</button>` : '',
+          own && f.is_active && topup > 0 ? `<button type="button" class="btn ghost small" data-topup="${esc(f.fund_id)}">Isi kas</button>` : '',
+          d.isHO ? `<button type="button" class="btn ghost small" data-edit-fund="${esc(f.fund_id)}">Ubah</button>` : ''].join('');
+        return `<tr><td><b>${esc(f.fund_name)}</b><div class="small muted">${f.project_code ? 'Proyek ' + esc(f.project_code) + ' · ' : ''}${esc(f.coa_code)}${f.is_active ? '' : ' · nonaktif'}</div></td>
+          <td>${esc(f.custodian_name)}</td>
+          <td><div class="fund-bal${pct < 25 ? ' low' : ''}"><span>${rp(f.balance)} <span class="small muted">/ ${rpShort(f.ceiling)}</span></span><div class="bar"><div style="width:${pct.toFixed(0)}%"></div></div></div></td>
+          <td class="num">${rp(f.max_per_note)}</td>
+          <td class="small">${num(f.pending_notes) ? 'Nota ' + rp(f.pending_notes) + '<br>' : ''}${num(f.pending_topup) ? 'Isi kas ' + rp(f.pending_topup) : ''}${!num(f.pending_notes) && !num(f.pending_topup) ? '<span class="muted">-</span>' : ''}</td>
+          <td><div class="row-gap">${acts}</div></td></tr>`;
+      }).join('') : emptyRow(6, d.isHO ? 'Belum ada kas site. Klik "+ Kas site" untuk membuat.' : 'Belum ada kas site atas nama Anda.'));
+
+    // nota
+    const nf = $('notaFilter').value;
+    const notes = d.expenses.filter((e) => nf === 'ALL' || e.status === 'SUBMITTED');
+    $('notaTable').innerHTML = '<tr><th>Tanggal</th><th>Sumber</th><th>Keterangan</th><th>Kategori</th><th class="num">Nilai</th><th>Status</th><th></th></tr>' +
+      (notes.length ? notes.map((e) => {
+        const src = e.source === 'PETTY_CASH' ? esc(e.fund_name) : 'Kasbon ' + esc(e.kasbon_employee);
+        const docBtn = `<button type="button" class="btn ghost small" data-docs-nota="${esc(e.expense_id)}" data-title="${esc(e.description + ' · ' + rp(e.amount))}">Dokumen${e.docs_missing ? ' !' : ' ✓'}</button>`;
+        let act = '';
+        if (e.status === 'SUBMITTED' && hasAuthor('APC', e.project_code)) {
+          act = e.docs_missing ? '<span class="small overdue">Lengkapi dokumen dulu</span>'
+            : `<button type="button" class="btn primary small" data-approve-nota="${esc(e.expense_id)}">Setujui</button><button type="button" class="btn ghost small" data-reject-nota="${esc(e.expense_id)}">Tolak</button>`;
+        }
+        const who = e.status === 'REJECTED' ? `<div class="small overdue">${esc(e.reject_reason || '')}</div>` : e.approved_by ? `<div class="small muted">${esc(e.approved_by)}</div>` : `<div class="small muted">oleh ${esc(e.submitted_by || '')}</div>`;
+        return `<tr><td>${tgl(e.expense_date)}</td><td>${src}${e.project_code ? `<div class="small muted">Proyek ${esc(e.project_code)}</div>` : ''}</td>
+          <td>${esc(e.description)}</td><td class="small">${esc(e.account_code)} ${esc(e.account_name || '')}</td>
+          <td class="num">${rp(e.amount)}${num(e.ppn_amount) ? `<div class="small muted">PPN ${rp(e.ppn_amount)}</div>` : ''}</td>
+          <td>${cashBadge(e.status)}${who}</td><td><div class="row-gap">${docBtn}${act}</div></td></tr>`;
+      }).join('') : emptyRow(7, nf === 'OPEN' ? 'Tidak ada nota yang menunggu approval' : 'Belum ada nota'));
+
+    // pengajuan
+    const rf = $('reqFilter').value;
+    const reqs = d.requests.filter((r) => rf === 'ALL' || ['PLANNED', 'APPROVED', 'PAID'].includes(r.status) && !(r.kind !== 'KASBON' && r.status === 'PAID'));
+    $('reqTable').innerHTML = '<tr><th>Jenis</th><th>Untuk</th><th>Keterangan</th><th class="num">Nilai</th><th>Status</th><th></th></tr>' +
+      (reqs.length ? reqs.map((r) => {
+        const target = r.kind === 'TOPUP' ? esc(r.fund_name) : r.kind === 'KASBON' ? esc(r.employee_name) : esc(r.payee) + `<div class="small muted">${esc(r.account_code)} ${esc(r.account_name || '')}</div>`;
+        const acts = [];
+        if (r.kind === 'DIRECT') acts.push(`<button type="button" class="btn ghost small" data-docs-direct="${esc(r.request_id)}" data-title="${esc(r.payee + ' · ' + r.description)}">Dokumen${r.status === 'PLANNED' ? (r.docs_missing ? ' !' : ' ✓') : ''}</button>`);
+        if (r.status === 'PLANNED' && hasAuthor('APY', r.project_code)) {
+          if (r.docs_missing) acts.push('<span class="small overdue">Lengkapi dokumen dulu</span>');
+          else acts.push(`<button type="button" class="btn primary small" data-approve-req="${esc(r.request_id)}">Setujui</button>`);
+          acts.push(`<button type="button" class="btn ghost small" data-reject-req="${esc(r.request_id)}">Tolak</button>`);
+        }
+        if (r.status === 'APPROVED' && d.isHO) acts.push(`<button type="button" class="btn primary small" data-pay-req="${esc(r.request_id)}">Tandai Dibayar</button>`);
+        if (r.kind === 'KASBON' && r.status === 'PAID') {
+          if (d.isHO || r.employee_id === d.me) acts.push(`<button type="button" class="btn primary small" data-nota-kasbon="${esc(r.request_id)}">+ Nota</button>`);
+          if (d.isHO) acts.push(`<button type="button" class="btn ghost small" data-close-kasbon="${esc(r.request_id)}">Tutup kasbon</button>`);
+        }
+        let info = '';
+        if (r.kind === 'KASBON' && ['PAID', 'CLOSED'].includes(r.status)) info = `<div class="small muted">Nota disetujui ${rp(r.settled)}${num(r.pending_notes) ? ' · menunggu ' + rp(r.pending_notes) : ''}</div>`;
+        if (r.status === 'REJECTED') info = `<div class="small overdue">${esc(r.reject_reason || '')}</div>`;
+        else if (r.paid_at) info += `<div class="small muted">${tgl(r.paid_at)} · ${esc(r.bank_label || '')}${r.payment_ref ? ' · ' + esc(r.payment_ref) : ''}</div>`;
+        else if (r.approved_by) info += `<div class="small muted">disetujui ${esc(r.approved_by)}</div>`;
+        const label = r.kind === 'KASBON' && r.status === 'PAID' ? 'Berjalan' : null;
+        return `<tr><td><span class="kind">${KIND_LABEL[r.kind]}</span>${r.project_code ? `<div class="small muted">Proyek ${esc(r.project_code)}</div>` : ''}</td>
+          <td>${target}</td><td>${esc(r.description)}<div class="small muted">diajukan ${esc(r.requested_by || '')}</div></td>
+          <td class="num">${rp(r.amount)}${num(r.pph23_amount) ? `<div class="small muted">dibayar ${rp(num(r.amount) - num(r.pph23_amount))}</div>` : ''}</td>
+          <td>${cashBadge(r.status, label)}${info}</td><td><div class="row-gap">${acts.join('')}</div></td></tr>`;
+      }).join('') : emptyRow(6, 'Tidak ada pengajuan'));
+  } catch (e) { toast(e.message, true); }
+}
+['notaFilter', 'reqFilter'].forEach((id) => $(id).addEventListener('change', loadKas));
+
+// --- form dialog generik ---
+let cashSubmit = null;
+const opt = (v, t, sel) => `<option value="${esc(v)}"${sel ? ' selected' : ''}>${esc(t)}</option>`;
+const projectOptions = (sel, blank = '— tanpa proyek / overhead —') => opt('', blank) + cache.kas.projects.map((p) => opt(p.project_id, `${p.code} · ${p.name}`, p.project_id === sel)).join('');
+const accountOptions = (sel) => cache.kas.accounts.map((a) => opt(a.code, `${a.code} · ${a.name}`, a.code === sel)).join('');
+const bankOptions = () => cache.kas.banks.map((b) => opt(b.bank_id, `${b.label} (${b.bank_name})`)).join('');
+const fileRows = (gate) => {
+  const types = cache.kas.docTypes.filter((t) => t.gate === gate);
+  return `<div class="cash-files"><div class="small"><b>Lampiran</b> · foto/PDF maks ${MAX_UPLOAD_MB} MB</div>${types.map((t) => `<div class="f-row" data-cash-doc="${esc(t.doc_type)}" data-rule="${esc(t.rule)}">
+    <span class="small">${esc(t.doc_name)} ${t.rule === 'ALWAYS' ? '<span class="badge warn">Wajib</span>' : t.rule === 'IF_PPN' ? '<span class="badge">Jika PPN</span>' : '<span class="badge">Opsional</span>'}</span>
+    <input type="file" accept=".pdf,image/*" capture="environment" aria-label="${esc(t.doc_name)}"></div>`).join('')}</div>`;
+};
+function openCash(title, info, html, submitLabel, onSubmit) {
+  $('cashTitle').textContent = title;
+  $('cashInfo').textContent = info || '';
+  $('cashFields').innerHTML = html;
+  $('cashMsg').textContent = '';
+  $('cashSubmit').textContent = submitLabel;
+  $('cashSubmit').disabled = false;
+  cashSubmit = onSubmit;
+  $('cashDialog').showModal();
+}
+$('cashCancel').addEventListener('click', () => $('cashDialog').close());
+$('cashForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  if (!cashSubmit) return;
+  $('cashSubmit').disabled = true; $('cashMsg').textContent = '';
+  try { await cashSubmit(); $('cashDialog').close(); loadKas(); }
+  catch (e) { $('cashMsg').textContent = e.message; $('cashSubmit').disabled = false; }
+});
+const fv = (id) => $(id).value.trim();
+async function uploadCashFiles(gate, refId) {
+  const failed = []; let last = null;
+  for (const row of document.querySelectorAll('#cashFields [data-cash-doc]')) {
+    const file = row.querySelector('input[type=file]').files[0];
+    if (!file) continue;
+    try { last = await attachDocument(gate, refId, row.dataset.cashDoc, file, ''); } catch (e) { failed.push(e.message); }
+  }
+  if (failed.length) toast('Tersimpan, tapi ada upload gagal: ' + failed.join('; '), true);
+  return last;
+}
+
+function notaForm(source, refId, title, info, projectId) {
+  openCash(title, info, `
+    <div class="row2"><div><label for="cDate">Tanggal nota</label><input type="date" id="cDate" value="${today()}" max="${today()}" required></div>
+      <div><label for="cAcc">Kategori biaya</label><select id="cAcc" required>${accountOptions('5-1400')}</select></div></div>
+    <label for="cDesc">Keterangan</label><input id="cDesc" placeholder="mis. BBM genset, ATK, konsumsi rapat" required>
+    <div class="row2"><div><label for="cAmt">Total nota (Rp)</label><input id="cAmt" inputmode="numeric" required></div>
+      <div><label for="cPpn">PPN di nota (Rp, kalau ada)</label><input id="cPpn" inputmode="numeric" value="0"></div></div>
+    <label for="cProj">Dibebankan ke proyek</label><select id="cProj">${projectOptions(projectId)}</select>
+    ${fileRows('NOTA')}`, 'Kirim nota', async () => {
+    const amt = parseNum(fv('cAmt')), ppn = parseNum(fv('cPpn'));
+    const needDocs = [...document.querySelectorAll('#cashFields [data-cash-doc]')].filter((r) => (r.dataset.rule === 'ALWAYS' || (r.dataset.rule === 'IF_PPN' && ppn > 0)) && !r.querySelector('input').files[0]);
+    if (needDocs.length) throw new Error('Lampirkan dulu: ' + needDocs.map((r) => r.querySelector('span').textContent.replace(/(Wajib|Jika PPN)/, '').trim()).join(', '));
+    const r = await api('fin_create_expense', { p_source: source, p_ref_id: refId, p_expense_date: fv('cDate'), p_project_id: fv('cProj') || null,
+      p_account_code: fv('cAcc'), p_description: fv('cDesc'), p_amount: amt, p_ppn_amount: ppn });
+    const last = await uploadCashFiles('NOTA', r.expense_id);
+    const missing = last ? last.missing : r.docs_missing;
+    toast(missing ? 'Nota tersimpan. Masih kurang: ' + missing : 'Nota terkirim, menunggu approval APC', !!missing);
+  });
+}
+
+$('newKasbonBtn').addEventListener('click', () => {
+  const d = cache.kas; if (!d) return;
+  const isCustodian = d.funds.some((f) => f.custodian_id === d.me);
+  const emps = d.isHO || isCustodian ? d.employees : d.employees.filter((e) => e.id === d.me);
+  openCash('Ajukan Kasbon', 'Uang muka karyawan, dipertanggungjawabkan dengan nota. Disetujui APY lalu dibayar finance HO.', `
+    <label for="cEmp">Karyawan penerima</label><select id="cEmp" required>${emps.map((e) => opt(e.id, e.name, e.id === d.me)).join('')}</select>
+    <div class="row2"><div><label for="cAmt">Nilai kasbon (Rp)</label><input id="cAmt" inputmode="numeric" required></div>
+      <div><label for="cDue">Target pertanggungjawaban</label><input type="date" id="cDue"></div></div>
+    <label for="cProj">Proyek</label><select id="cProj">${projectOptions(null)}</select>
+    <label for="cDesc">Keperluan</label><input id="cDesc" placeholder="mis. Perjalanan dinas ke site 014" required>`, 'Ajukan', async () => {
+    await api('fin_request_cash', { p_kind: 'KASBON', p_fund_id: null, p_employee_id: Number(fv('cEmp')), p_project_id: fv('cProj') || null, p_payee: null,
+      p_account_code: null, p_amount: parseNum(fv('cAmt')), p_ppn_amount: 0, p_pph23_amount: 0, p_due_date: fv('cDue') || null, p_description: fv('cDesc') });
+    toast('Kasbon diajukan, menunggu approval APY');
+  });
+});
+
+$('newDirectBtn').addEventListener('click', () => {
+  openCash('Pengeluaran Langsung', 'Tagihan tanpa PO yang dibayar dari bank HO (listrik, sewa, BPJS, notaris, reimburse). Disetujui APY setelah dokumen lengkap.', `
+    <div class="row2"><div><label for="cPayee">Penerima</label><input id="cPayee" required></div>
+      <div><label for="cAcc">Akun beban</label><select id="cAcc" required>${accountOptions('5-1200')}</select></div></div>
+    <label for="cDesc">Keterangan</label><input id="cDesc" required>
+    <div class="row2"><div><label for="cAmt">Total tagihan termasuk PPN (Rp)</label><input id="cAmt" inputmode="numeric" required></div>
+      <div><label for="cPpn">PPN (Rp)</label><input id="cPpn" inputmode="numeric" value="0"></div></div>
+    <div class="row2"><div><label for="cPph">PPh 23 dipotong (Rp)</label><input id="cPph" inputmode="numeric" value="0"></div>
+      <div><label for="cDue">Jatuh tempo</label><input type="date" id="cDue"></div></div>
+    <label for="cProj">Dibebankan ke proyek</label><select id="cProj">${projectOptions(null)}</select>
+    ${fileRows('DIRECT')}`, 'Simpan', async () => {
+    const r = await api('fin_request_cash', { p_kind: 'DIRECT', p_fund_id: null, p_employee_id: null, p_project_id: fv('cProj') || null, p_payee: fv('cPayee'),
+      p_account_code: fv('cAcc'), p_amount: parseNum(fv('cAmt')), p_ppn_amount: parseNum(fv('cPpn')), p_pph23_amount: parseNum(fv('cPph')),
+      p_due_date: fv('cDue') || null, p_description: fv('cDesc') });
+    const last = await uploadCashFiles('DIRECT', r.request_id);
+    const missing = last ? last.missing : r.docs_missing;
+    toast(missing ? 'Tersimpan dengan status HOLD. Kurang: ' + missing : 'Tersimpan, menunggu approval APY', !!missing);
+  });
+});
+
+function fundForm(f) {
+  const d = cache.kas;
+  openCash(f ? 'Ubah Kas Site' : 'Kas Site Baru', f ? `Akun ${f.coa_code}` : 'Sub-akun kas (1-11xx) dibuat otomatis.', `
+    <label for="cName">Nama kas</label><input id="cName" value="${esc(f ? f.fund_name : '')}" placeholder="mis. Kas Site 014 Handil" required>
+    <div class="row2"><div><label for="cProj">Proyek / site</label><select id="cProj">${projectOptions(f && f.project_id, '— kantor / HO —')}</select></div>
+      <div><label for="cCust">Pemegang kas</label><select id="cCust" required>${d.employees.map((e) => opt(e.id, e.name, f && e.id === f.custodian_id)).join('')}</select></div></div>
+    <div class="row2"><div><label for="cCeil">Plafon kas (Rp)</label><input id="cCeil" inputmode="numeric" value="${f ? num(f.ceiling).toLocaleString('id-ID') : ''}" required></div>
+      <div><label for="cMax">Batas per nota (Rp)</label><input id="cMax" inputmode="numeric" value="${f ? num(f.max_per_note).toLocaleString('id-ID') : ''}" required></div></div>
+    ${f ? `<label class="row-gap"><input type="checkbox" id="cActive"${f.is_active ? ' checked' : ''}> Kas aktif</label>` : ''}
+    <p class="small muted">Pemegang kas butuh PIC <b>FIN-PC</b> di akunnya. Nota di atas batas per nota ditolak dan harus lewat PO di SMMS.</p>`, 'Simpan', async () => {
+    await api('fin_save_fund', { p_fund_id: f ? f.fund_id : null, p_fund_name: fv('cName'), p_project_id: fv('cProj') || null, p_custodian_id: Number(fv('cCust')),
+      p_ceiling: parseNum(fv('cCeil')), p_max_per_note: parseNum(fv('cMax')), p_is_active: f ? $('cActive').checked : true });
+    toast('Kas site tersimpan');
+  });
+}
+$('newFundBtn').addEventListener('click', () => fundForm(null));
+
+function rejectForm(kind, id, label) {
+  openCash('Tolak ' + label, '', `<label for="cReason">Alasan penolakan</label><input id="cReason" required>`, 'Tolak', async () => {
+    if (kind === 'nota') await api('fin_decide_expense', { p_expense_id: id, p_approve: false, p_reason: fv('cReason') });
+    else await api('fin_decide_cash', { p_request_id: id, p_approve: false, p_reason: fv('cReason') });
+    toast(label + ' ditolak');
+  });
+}
+
+$('page-kas').addEventListener('click', async (ev) => {
+  const d = cache.kas; if (!d) return;
+  const t = (attr) => ev.target.closest(`[${attr}]`);
+  const fundOf = (id) => d.funds.find((f) => String(f.fund_id) === String(id));
+  const reqOf = (id) => d.requests.find((r) => String(r.request_id) === String(id));
+  let b;
+  if ((b = t('data-nota-fund'))) {
+    const f = fundOf(b.dataset.notaFund);
+    const avail = num(f.balance) - num(f.pending_notes);
+    notaForm('PETTY_CASH', f.fund_id, 'Nota Kas Site', `${f.fund_name} · tersedia ${rp(avail)} · batas per nota ${rp(f.max_per_note)}`, f.project_id);
+  } else if ((b = t('data-nota-kasbon'))) {
+    const r = reqOf(b.dataset.notaKasbon);
+    notaForm('KASBON', r.request_id, 'Nota Kasbon', `${r.employee_name} · kasbon ${rp(r.paid_amount)} · sudah dipertanggungjawabkan ${rp(num(r.settled) + num(r.pending_notes))}`, r.project_id);
+  } else if ((b = t('data-topup'))) {
+    const f = fundOf(b.dataset.topup);
+    const max = Math.max(0, num(f.ceiling) - num(f.balance) - num(f.pending_topup));
+    openCash('Ajukan Isi Kas', `${f.fund_name} · saldo ${rp(f.balance)} · plafon ${rp(f.ceiling)}`, `
+      <label for="cAmt">Nilai isi kas (Rp)</label><input id="cAmt" inputmode="numeric" value="${max.toLocaleString('id-ID')}" required>
+      <p class="small muted">Disarankan mengisi sampai plafon (${rp(max)}). Ditransfer dari bank HO setelah disetujui APY.</p>
+      <label for="cDesc">Keterangan</label><input id="cDesc" value="Isi ulang kas ${esc(f.fund_name)}" required>`, 'Ajukan', async () => {
+      await api('fin_request_cash', { p_kind: 'TOPUP', p_fund_id: f.fund_id, p_employee_id: null, p_project_id: null, p_payee: null, p_account_code: null,
+        p_amount: parseNum(fv('cAmt')), p_ppn_amount: 0, p_pph23_amount: 0, p_due_date: null, p_description: fv('cDesc') });
+      toast('Pengajuan isi kas terkirim, menunggu approval APY');
+    });
+  } else if ((b = t('data-edit-fund'))) fundForm(fundOf(b.dataset.editFund));
+  else if ((b = t('data-docs-nota'))) openDocs('NOTA', Number(b.dataset.docsNota), b.dataset.title);
+  else if ((b = t('data-docs-direct'))) openDocs('DIRECT', Number(b.dataset.docsDirect), b.dataset.title);
+  else if ((b = t('data-approve-nota'))) {
+    b.disabled = true;
+    try { await api('fin_decide_expense', { p_expense_id: Number(b.dataset.approveNota), p_approve: true, p_reason: null }); toast('Nota disetujui'); loadKas(); }
+    catch (e) { toast(e.message, true); b.disabled = false; }
+  } else if ((b = t('data-reject-nota'))) rejectForm('nota', Number(b.dataset.rejectNota), 'nota');
+  else if ((b = t('data-approve-req'))) {
+    const r = reqOf(b.dataset.approveReq);
+    if (!confirm(`Setujui ${KIND_LABEL[r.kind].toLowerCase()} ${rp(r.amount)}?`)) return;
+    b.disabled = true;
+    try { await api('fin_decide_cash', { p_request_id: r.request_id, p_approve: true, p_reason: null }); toast('Pengajuan disetujui'); loadKas(); }
+    catch (e) { toast(e.message, true); b.disabled = false; }
+  } else if ((b = t('data-reject-req'))) rejectForm('req', Number(b.dataset.rejectReq), 'pengajuan');
+  else if ((b = t('data-pay-req'))) {
+    const r = reqOf(b.dataset.payReq);
+    if (!d.banks.length) { toast('Tambahkan rekening bank dulu di halaman Pembayaran.', true); return; }
+    const pay = r.kind === 'DIRECT' ? num(r.amount) - num(r.pph23_amount) : num(r.amount);
+    openCash('Tandai Dibayar', `${KIND_LABEL[r.kind]} · ${r.kind === 'TOPUP' ? r.fund_name : r.kind === 'KASBON' ? r.employee_name : r.payee} · ${rp(pay)}`, `
+      <label for="cBank">Dibayar dari rekening</label><select id="cBank" required>${bankOptions()}</select>
+      <div class="row2"><div><label for="cDate">Tanggal bayar</label><input type="date" id="cDate" value="${today()}" required></div>
+        <div><label for="cRef">No. bukti transfer</label><input id="cRef"></div></div>`, 'Simpan', async () => {
+      await api('fin_pay_cash', { p_request_id: r.request_id, p_bank_id: Number(fv('cBank')), p_paid_date: fv('cDate'), p_payment_ref: fv('cRef') });
+      toast('Pembayaran tercatat');
+    });
+  } else if ((b = t('data-close-kasbon'))) {
+    const r = reqOf(b.dataset.closeKasbon);
+    if (num(r.pending_notes)) { toast('Masih ada nota kasbon yang menunggu approval APC.', true); return; }
+    const diff = num(r.paid_amount) - num(r.settled);
+    const line = diff > 0 ? `Sisa <b>${rp(diff)}</b> dikembalikan karyawan ke rekening perusahaan.` : diff < 0 ? `Kekurangan <b>${rp(-diff)}</b> dibayarkan ke karyawan.` : 'Nota sama dengan kasbon, tidak ada selisih.';
+    openCash('Tutup Kasbon', `${r.employee_name} · ${r.description}`, `
+      <div class="diff-box">Kasbon ${rp(r.paid_amount)}<br>Nota disetujui ${rp(r.settled)}<br>${line}</div>
+      ${diff !== 0 ? `<label for="cBank">${diff > 0 ? 'Diterima di rekening' : 'Dibayar dari rekening'}</label><select id="cBank" required>${bankOptions()}</select>` : ''}
+      <div class="row2"><div><label for="cDate">Tanggal</label><input type="date" id="cDate" value="${today()}" required></div>
+        <div><label for="cRef">No. bukti</label><input id="cRef"></div></div>`, 'Tutup kasbon', async () => {
+      await api('fin_close_kasbon', { p_request_id: r.request_id, p_bank_id: diff !== 0 ? Number(fv('cBank')) : null, p_close_date: fv('cDate'), p_ref: fv('cRef') });
+      toast('Kasbon ditutup');
+    });
+  }
+});
+
+const loaders = { dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
 
 // ---------- start ----------
 (function init() {

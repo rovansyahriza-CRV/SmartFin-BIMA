@@ -72,6 +72,7 @@
         <a href="#dashboard" data-page="dashboard" data-pic="fin,fin-ap,fin-jv,fin-bva,fin-ast">Dashboard</a>
         <a href="#ap" data-page="ap" data-pic="fin-ap">Hutang Vendor (AP)</a>
         <a href="#bayar" data-page="bayar" data-pic="fin-ap">Pembayaran</a>
+        <a href="#kas" data-page="kas" data-pic="fin-ap,fin-pc">Kas &amp; Kasbon</a>
         <a href="#jurnal" data-page="jurnal" data-pic="fin-jv">Jurnal</a>
         <a href="#budget" data-page="budget" data-pic="fin-bva">Budget vs Actual</a>
         <a href="#aset" data-page="aset" data-pic="fin-ast">Aset Tetap</a>
@@ -140,6 +141,27 @@
             <button type="submit" class="btn primary">Simpan Rekening</button>
           </form>
         </div>
+      </section>
+
+      <!-- KAS & KASBON -->
+      <section id="page-kas" class="page" hidden>
+        <div class="page-head">
+          <div><h1>Kas &amp; Kasbon</h1><p class="muted">Petty cash site, pengeluaran tanpa PO, dan kasbon karyawan. Nota disetujui APC, uang keluar dari bank disetujui APY.</p></div>
+          <div class="row-gap">
+            <button type="button" class="btn ghost" id="newKasbonBtn">+ Kasbon</button>
+            <button type="button" class="btn ghost" id="newDirectBtn" hidden>+ Pengeluaran langsung</button>
+            <button type="button" class="btn ghost" id="newFundBtn" hidden>+ Kas site</button>
+            <button type="button" class="btn ghost" data-refresh="kas">Muat ulang</button>
+          </div>
+        </div>
+        <div class="kpis" id="kasKpis"></div>
+        <div class="card"><div class="card-head"><h2>Kas Site</h2><span class="small muted">Saldo dari jurnal · plafon &amp; batas per nota diatur finance HO</span></div><div class="scroll"><table id="fundTable"></table></div></div>
+        <div class="card"><div class="card-head"><h2>Nota</h2>
+            <select id="notaFilter" aria-label="Filter nota"><option value="OPEN">Menunggu approval</option><option value="ALL">Semua (120 hari)</option></select></div>
+          <div class="scroll"><table id="notaTable"></table></div></div>
+        <div class="card"><div class="card-head"><h2>Pengajuan Uang Keluar</h2>
+            <select id="reqFilter" aria-label="Filter pengajuan"><option value="OPEN">Belum selesai</option><option value="ALL">Semua</option></select></div>
+          <div class="scroll"><table id="reqTable"></table></div></div>
       </section>
 
       <!-- JURNAL -->
@@ -270,6 +292,19 @@
     <div class="dialog-actions">
       <button type="button" class="btn ghost" id="payCancel">Batal</button>
       <button type="submit" class="btn primary" value="save">Simpan Pembayaran</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="cashDialog">
+  <form id="cashForm" method="dialog">
+    <h2 id="cashTitle"></h2>
+    <p class="muted small" id="cashInfo"></p>
+    <div id="cashFields"></div>
+    <p id="cashMsg" class="error-text" role="alert"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" id="cashCancel">Batal</button>
+      <button type="submit" class="btn primary" id="cashSubmit">Simpan</button>
     </div>
   </form>
 </dialog>
