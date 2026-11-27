@@ -23,6 +23,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/004_auth_api.sql` | Login SmartFin (PIC = menu, Author = approval) + API `fin_*` untuk halaman web | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/005_payment.sql` | Rekening bank, termin vendor, jadwal & approval pembayaran (APY), biaya tambahan invoice | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/006_documents.sql` | Checklist & upload dokumen invoice (Gate A uang muka, Gate B invoice), invoice HOLD kalau dokumen belum lengkap | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/007_payment_doc_hold.sql` | Pembayaran HOLD kalau dokumen belum lengkap, hand over dihitung sebagai bukti terima site | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -145,5 +146,7 @@ Serah terima belum diminta di tahap uang muka.
 
 - Dokumen wajib belum lengkap: invoice berstatus **HOLD**, dan uang muka tidak bisa disetujui. Begitu lengkap, status pindah sendiri ke MATCHED.
 - Dokumen tidak bisa dihapus setelah invoice / uang muka disetujui.
+- **Pembayaran ikut HOLD (migration 007):** jadwal pelunasan tidak bisa disetujui APY maupun ditandai lunas selama checklist Gate B invoice-nya belum lengkap (berlaku juga untuk invoice lama). Uang muka memakai Gate A.
+- Bukti terima site dianggap ada kalau sudah ada Site Receiving **atau** Hand over di SMMS. Kalau belum, checklist menampilkan no. surat jalan dan site tujuan yang belum dikonfirmasi.
 - File maksimal 10 MB. Bridge Drive (Apps Script "BIMA Drive Bridge") menyimpan dokumen di `SMMS-BIMA-Files/finance/yyyy-MM` **tanpa** link publik, jadi hanya akun yang diberi akses ke folder `finance` yang bisa membuka file.
 

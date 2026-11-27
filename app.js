@@ -438,7 +438,7 @@ async function openDocs(gate, refId, title) {
       const chips = (it.items || []).map((x) => {
         const label = esc(x.label) + (x.bond_expiry ? ` · s/d ${tgl(x.bond_expiry)}` : '') + (x.bond_amount ? ` · ${rp(x.bond_amount)}` : '');
         const link = x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${label}</a>` : label;
-        const del = x.doc_id ? `<button type="button" data-del-doc="${esc(x.doc_id)}" aria-label="Hapus dokumen">hapus</button>` : '';
+        const del = x.doc_id && !d.locked ? `<button type="button" data-del-doc="${esc(x.doc_id)}" aria-label="Hapus dokumen">hapus</button>` : '';
         return `<span class="doc-chip">${link}${del}</span>`;
       }).join('');
       const tag = it.required ? '<span class="badge warn">Wajib</span>' : '<span class="badge">Opsional</span>';
@@ -451,11 +451,11 @@ async function openDocs(gate, refId, title) {
             <input type="text" class="b-amount" inputmode="numeric" placeholder="Nilai jaminan (Rp)" aria-label="Nilai jaminan">
             <input type="date" class="b-expiry" aria-label="Berlaku sampai"></div>` : ''}` : '<div class="small muted">Otomatis dari SMMS</div>';
       return `<div class="doc-row">${ic}<div><div class="row-gap"><span class="doc-name">${esc(it.doc_name)}</span>${tag}</div>
-        <div class="doc-items">${chips || (it.source === 'SMMS' ? '<span class="small muted">Belum ada di SMMS</span>' : '')}</div>${up}</div></div>`;
+        <div class="doc-items">${chips || (it.source === 'SMMS' ? `<span class="small ${it.required ? 'overdue' : 'muted'}">${esc(it.note || 'Belum ada di SMMS')}</span>` : '')}</div>${up}</div></div>`;
     }).join('') + `<p class="small ${d.missing ? 'overdue' : 'muted'}">${d.missing ? 'Belum lengkap: ' + esc(d.missing) : 'Semua dokumen wajib sudah lengkap ✓'}</p>`;
   } catch (e) { $('docList').innerHTML = ''; $('docMsg').textContent = e.message; }
 }
-$('docClose').addEventListener('click', () => { $('docDialog').close(); if (docCtx) (docCtx.gate === 'ADVANCE' ? loadBayar : loadAP)(); });
+$('docClose').addEventListener('click', () => { $('docDialog').close(); if (docCtx) ((location.hash.slice(1) === 'bayar') ? loadBayar : loadAP)(); });
 $('docList').addEventListener('click', async (ev) => {
   const ub = ev.target.closest('[data-upload]');
   if (ub) {
@@ -507,7 +507,7 @@ async function loadBayar() {
     const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
     $('payKpis').innerHTML =
       kpi('Menunggu approval APY', rpShort(sum(open.filter((x) => x.status !== 'APPROVED'))), `${open.filter((x) => x.status !== 'APPROVED').length} jadwal`) +
-      kpi('Siap dibayar', rpShort(sum(open.filter((x) => x.status === 'APPROVED'))), `${open.filter((x) => x.status === 'APPROVED').length} jadwal disetujui`) +
+      kpi('Siap dibayar', rpShort(sum(open.filter((x) => x.status === 'APPROVED' && !x.docs_missing))), `${open.filter((x) => x.status === 'APPROVED' && !x.docs_missing).length} jadwal · ${open.filter((x) => x.docs_missing).length} HOLD dokumen`, open.some((x) => x.docs_missing)) +
       kpi('Jatuh tempo ≤ 7 hari', rpShort(sum(week)), `${week.length} jadwal`, week.length > 0) +
       kpi('Sudah dibayar', rpShort(s.filter((x) => x.status === 'PAID').reduce((t, x) => t + num(x.paid_amount || x.amount), 0)), 'Total tercatat');
 
@@ -516,17 +516,22 @@ async function loadBayar() {
     $('payTable').innerHTML = '<tr><th>Jatuh tempo</th><th>Vendor / PO</th><th>Keterangan</th><th>Termin</th><th class="num">Nilai</th><th>Status</th><th></th></tr>' +
       (rows.length ? rows.map((p) => {
         let action = '';
-        const docBtn = p.schedule_type === 'ADVANCE' ? `<button type="button" class="btn ghost small" data-docs-adv="${esc(p.schedule_id)}" data-title="${esc(p.vendor_name + ' · ' + p.po_number + ' · ' + p.description)}">Dokumen${p.docs_missing ? ' !' : ' ✓'}</button>` : '';
+        const docTitle = esc(p.vendor_name + ' · ' + p.po_number + ' · ' + (p.invoice_no ? 'Inv ' + p.invoice_no : p.description));
+        const docMark = p.docs_missing ? ' !' : ' ✓';
+        const docBtn = p.schedule_type === 'ADVANCE'
+          ? `<button type="button" class="btn ghost small" data-docs-adv="${esc(p.schedule_id)}" data-title="${docTitle}">Dokumen${docMark}</button>`
+          : p.invoice_id ? `<button type="button" class="btn ghost small" data-docs-inv="${esc(p.invoice_id)}" data-title="${docTitle}">Dokumen${p.status === 'PAID' ? '' : docMark}</button>` : '';
+        const holdMsg = `<span class="small overdue">Lengkapi dokumen dulu</span>`;
         if (['PLANNED', 'DUE'].includes(p.status) && hasAuthor('APY', p.project_code)) {
-          action = p.docs_missing ? `<span class="small overdue">Lengkapi dokumen dulu</span>` : `<button type="button" class="btn primary small" data-approve-pay="${esc(p.schedule_id)}">Setujui</button>`;
+          action = p.docs_missing ? holdMsg : `<button type="button" class="btn primary small" data-approve-pay="${esc(p.schedule_id)}">Setujui</button>`;
         }
+        if (p.status === 'APPROVED') action = p.docs_missing ? holdMsg : `<button type="button" class="btn primary small" data-pay="${esc(p.schedule_id)}">Tandai Lunas</button>`;
         action = `<div class="row-gap">${docBtn}${action}</div>`;
-        if (p.status === 'APPROVED') action = `<div class="row-gap">${docBtn}<button type="button" class="btn primary small" data-pay="${esc(p.schedule_id)}">Tandai Lunas</button></div>`;
         const who = p.status === 'PAID' ? `<div class="small muted">${tgl(p.paid_at)} · ${esc(p.bank_label || '')} ${p.payment_ref ? '· ' + esc(p.payment_ref) : ''}</div>`
           : p.approved_by ? `<div class="small muted">disetujui ${esc(p.approved_by)}</div>` : '';
         return `<tr><td>${dueCell(p)}</td><td>${esc(p.vendor_name)}<div class="small muted">${esc(p.po_number)}${p.invoice_no ? ' · Inv ' + esc(p.invoice_no) : ''}${p.project_code ? ' · Proyek ' + esc(p.project_code) : ''}</div></td>
           <td>${esc(p.description)}${p.schedule_type === 'ADVANCE' ? ' <span class="badge info">Uang muka</span>' : ''}</td><td>${esc(p.term_type || '-')}</td>
-          <td class="num">${rp(p.status === 'PAID' ? (p.paid_amount || p.amount) : p.amount)}</td><td>${payBadge(p.status)}${who}</td><td>${action}</td></tr>`;
+          <td class="num">${rp(p.status === 'PAID' ? (p.paid_amount || p.amount) : p.amount)}</td><td>${payBadge(p.status)}${p.docs_missing ? ' <span class="badge warn" title="Dokumen belum lengkap: ' + esc(p.docs_missing) + '">HOLD</span>' : ''}${who}</td><td>${action}</td></tr>`;
       }).join('') : emptyRow(7, 'Tidak ada jadwal untuk filter ini'));
 
     const bal = d.bankBalances || {};
@@ -540,6 +545,8 @@ $('payFilter').addEventListener('change', loadBayar);
 $('payTable').addEventListener('click', async (ev) => {
   const dd = ev.target.closest('[data-docs-adv]');
   if (dd) { openDocs('ADVANCE', Number(dd.dataset.docsAdv), dd.dataset.title); return; }
+  const di = ev.target.closest('[data-docs-inv]');
+  if (di) { openDocs('INVOICE', Number(di.dataset.docsInv), di.dataset.title); return; }
   const a = ev.target.closest('[data-approve-pay]');
   if (a) {
     if (!confirm('Setujui pembayaran ini?')) return;
