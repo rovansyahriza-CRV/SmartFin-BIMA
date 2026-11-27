@@ -26,6 +26,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/007_payment_doc_hold.sql` | Pembayaran HOLD kalau dokumen belum lengkap, hand over dihitung sebagai bukti terima site | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/008_cash.sql` | Petty cash site, pengeluaran langsung tanpa PO, kasbon karyawan, hak akses FIN-PC & APC | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/009_bank.sql` | Saldo awal rekening (cut-off manual), mutasi bank lain-lain, rekonsiliasi bulanan | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/010_reports.sql` | Menu Laporan (PIC FIN-RPT): neraca saldo, buku besar, laba rugi + per proyek, neraca, arus kas, detail jurnal | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -82,6 +83,7 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | | `FIN-JV` | Jurnal |
 | | `FIN-BVA` | Budget vs Actual / RAB |
 | | `FIN-AST` | Aset tetap |
+| | `FIN-RPT` | Laporan keuangan: neraca saldo, buku besar, laba rugi, neraca, arus kas (migration 010) |
 | | `FIN-PC` | Kas & Kasbon: pemegang kas site input nota, ajukan isi kas / kasbon (migration 008) |
 | | `FIN-ALL` | Semua menu SmartFin |
 | PIC / Author | `ALL` | **Super admin**: semua menu + semua approval (AI, PJ, AB, APY, APC). Saat trial hanya 1 admin |
@@ -187,4 +189,20 @@ Ada di menu **Bank** (PIC FIN-AP). Semua diinput **FIN-AP** dan disetujui **PJ**
 
 - Mutasi bertanggal sebelum tanggal saldo awal ditolak. Mutasi yang sudah disetujui tidak bisa ditolak; koreksi dengan mutasi baru.
 - **Rekonsiliasi**: FIN-AP isi saldo akhir rekening koran per tanggal, SmartFin menghitung selisih dengan saldo jurnal sampai tanggal itu. PJ menyetujui kalau selisih 0, atau kalau selisihnya sudah diberi penjelasan.
+
+### Laporan keuangan (migration 010)
+
+Satu menu **Laporan** (PIC `FIN-RPT`; `ALL` dan `FIN-ALL` otomatis termasuk) dengan tab, filter periode, filter proyek, dan tombol **Ekspor Excel** (.xlsx).
+
+| Tab | Isi |
+|---|---|
+| Neraca Saldo | Saldo awal, debit, kredit, saldo akhir per akun + cek seimbang |
+| Buku Besar | Mutasi satu akun dengan saldo berjalan; klik baris untuk melihat jurnalnya |
+| Laba Rugi | Pendapatan, beban pokok proyek (5-xxxx), laba kotor, beban usaha (6-xxxx), laba bersih + ringkasan margin per proyek |
+| Neraca | Aset, liabilitas, ekuitas per tanggal akhir, termasuk laba ditahan dan laba tahun berjalan + cek seimbang |
+| Arus Kas | Saldo kas & bank awal, arus kas operasi / investasi / pendanaan / setoran saldo awal, saldo akhir + rincian |
+
+- Jurnal VOID tidak pernah dihitung. Jurnal DRAFT ikut dihitung kalau "Termasuk jurnal DRAFT" dicentang; matikan untuk angka final (hanya POSTED).
+- Klik akun di Neraca Saldo, Laba Rugi, atau Neraca untuk membuka Buku Besar akun itu.
+- Filter proyek memakai proyek di baris jurnal; neraca per proyek wajar tidak seimbang.
 

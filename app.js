@@ -796,7 +796,9 @@ function openCash(title, info, html, submitLabel, onSubmit) {
   $('cashInfo').textContent = info || '';
   $('cashFields').innerHTML = html;
   $('cashMsg').textContent = '';
-  $('cashSubmit').textContent = submitLabel;
+  $('cashSubmit').textContent = submitLabel || '';
+  $('cashSubmit').hidden = !submitLabel;
+  $('cashCancel').textContent = submitLabel ? 'Batal' : 'Tutup';
   $('cashSubmit').disabled = false;
   cashSubmit = onSubmit;
   $('cashDialog').showModal();
@@ -1109,7 +1111,173 @@ $('page-bank').addEventListener('click', async (ev) => {
   }
 });
 
-const loaders = { dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
+// ---------- laporan keuangan ----------
+const RPT_TITLE = { TB: 'Neraca Saldo', GL: 'Buku Besar', PL: 'Laba Rugi', BS: 'Neraca', CF: 'Arus Kas' };
+let rptKind = 'TB', rptExportRows = null, rptMeta = null;
+const rpN = (v) => { const n = num(v); return n < 0 ? `(${rp(-n)})` : rp(n); };
+const dk = (v) => { const n = num(v); return n === 0 ? rp(0) : `${rp(Math.abs(n))} ${n > 0 ? 'D' : 'K'}`; };
+function rptInitDates() {
+  if ($('rptFrom').value) return;
+  const t = today();
+  $('rptFrom').value = t.slice(0, 8) + '01';
+  $('rptTo').value = t;
+}
+async function loadLaporan() { rptInitDates(); runReport(); }
+function setRptTab(k) {
+  rptKind = k;
+  document.querySelectorAll('[data-rpt]').forEach((b) => b.classList.toggle('active', b.dataset.rpt === k));
+  $('rptAccWrap').hidden = k !== 'GL';
+  $('rptFrom').disabled = k === 'BS';
+}
+document.querySelectorAll('[data-rpt]').forEach((b) => b.addEventListener('click', () => { setRptTab(b.dataset.rpt); runReport(); }));
+$('rptRun').addEventListener('click', () => runReport());
+async function runReport(account) {
+  if (account) $('rptAccount').value = account;
+  if (rptKind === 'GL' && !$('rptAccount').value) {
+    if (rptMeta && rptMeta.accounts.length) {
+      $('rptBody').innerHTML = '<p class="muted">Pilih akun, lalu klik Tampilkan. Atau klik akun di Neraca Saldo / Laba Rugi.</p>';
+      rptExportRows = null; return;
+    }
+  }
+  $('rptBody').innerHTML = '<p class="muted">Menghitung…</p>';
+  try {
+    const r = await api('fin_report', { p_report: rptKind, p_from: $('rptFrom').value || null, p_to: $('rptTo').value || null,
+      p_project_id: $('rptProject').value || null, p_account: rptKind === 'GL' ? ($('rptAccount').value || null) : null,
+      p_include_draft: $('rptDraft').checked, p_journal_id: null });
+    if (r.meta && !rptMeta) {
+      rptMeta = r.meta;
+      $('rptProject').innerHTML = '<option value="">Semua proyek</option>' + r.meta.projects.map((p) => `<option value="${esc(p.project_id)}">${esc(p.code)} · ${esc(p.name)}</option>`).join('');
+      $('rptAccount').innerHTML = '<option value="">— pilih akun —</option>' + r.meta.accounts.map((a) => `<option value="${esc(a.code)}">${esc(a.code)} · ${esc(a.name)}</option>`).join('');
+      if (account) $('rptAccount').value = account;
+    }
+    renderReport(r);
+  } catch (e) { $('rptBody').innerHTML = `<p class="error-text">${esc(e.message)}</p>`; rptExportRows = null; }
+}
+function rptHeader(r) {
+  const period = r.report === 'BS' ? `Per ${tgl(r.to)}` : `${tgl(r.from)} s/d ${tgl(r.to)}`;
+  const proj = r.project ? ` · Proyek ${esc(r.project.code)}` : ' · Semua proyek';
+  const note = r.includeDraft && num(r.draftCount) > 0 ? `<div class="rpt-note">Termasuk ${r.draftCount} jurnal DRAFT yang belum diposting PJ. Matikan "Termasuk jurnal DRAFT" untuk angka final.</div>` : '';
+  return `<div class="rpt-head"><h2>${RPT_TITLE[r.report]}</h2><span class="small muted">${period}${proj}</span></div>${note}`;
+}
+function renderReport(r) {
+  const d = r.data; let html = rptHeader(r); const X = [[RPT_TITLE[r.report]], [r.report === 'BS' ? `Per ${r.to}` : `${r.from} s/d ${r.to}`, r.project ? 'Proyek ' + r.project.code : 'Semua proyek'], []];
+  if (r.report === 'TB') {
+    const t = d.reduce((a, x) => ({ o: a.o + num(x.opening), d: a.d + num(x.debit), c: a.c + num(x.credit), z: a.z + num(x.closing) }), { o: 0, d: 0, c: 0, z: 0 });
+    html += '<div class="scroll"><table class="rpt"><tr><th>Akun</th><th>Nama akun</th><th class="num">Saldo awal</th><th class="num">Debit</th><th class="num">Kredit</th><th class="num">Saldo akhir</th></tr>' +
+      (d.length ? d.map((x) => `<tr class="link" data-gl="${esc(x.account_code)}"><td>${esc(x.account_code)}</td><td>${esc(x.account_name)}</td><td class="num">${dk(x.opening)}</td><td class="num">${rp(x.debit)}</td><td class="num">${rp(x.credit)}</td><td class="num">${dk(x.closing)}</td></tr>`).join('') : emptyRow(6, 'Belum ada jurnal'))
+      + `<tr class="total"><td colspan="2">Total</td><td class="num">${dk(t.o)}</td><td class="num">${rp(t.d)}</td><td class="num">${rp(t.c)}</td><td class="num">${dk(t.z)}</td></tr></table></div>`
+      + `<p class="small ${Math.round(t.d - t.c) === 0 ? 'rpt-ok' : 'rpt-bad'}">${Math.round(t.d - t.c) === 0 ? 'Seimbang: total debit = total kredit.' : 'Tidak seimbang: selisih ' + rp(t.d - t.c)}</p>`;
+    X.push(['Akun', 'Nama akun', 'Saldo awal (D+/K-)', 'Debit', 'Kredit', 'Saldo akhir (D+/K-)']);
+    d.forEach((x) => X.push([x.account_code, x.account_name, num(x.opening), num(x.debit), num(x.credit), num(x.closing)]));
+    X.push(['Total', '', t.o, t.d, t.c, t.z]);
+  } else if (r.report === 'GL') {
+    let bal = num(d.opening);
+    html += `<p><b>${esc(d.account ? d.account.code + ' · ' + d.account.name : '')}</b></p><div class="scroll"><table class="rpt"><tr><th>Tanggal</th><th>No. jurnal</th><th>Keterangan</th><th>Proyek</th><th class="num">Debit</th><th class="num">Kredit</th><th class="num">Saldo</th></tr>`
+      + `<tr class="sub"><td colspan="6">Saldo awal</td><td class="num">${dk(bal)}</td></tr>`;
+    X.push(['Akun', d.account ? d.account.code + ' ' + d.account.name : '']); X.push(['Tanggal', 'No. jurnal', 'Keterangan', 'Proyek', 'Debit', 'Kredit', 'Saldo (D+/K-)']); X.push(['', '', 'Saldo awal', '', '', '', bal]);
+    d.lines.forEach((x) => {
+      bal += num(x.debit) - num(x.credit);
+      html += `<tr class="link" data-jrn="${esc(x.journal_id)}"><td>${tgl(x.journal_date)}</td><td>${esc(x.journal_no || 'DRAFT #' + x.journal_id)}${x.status === 'DRAFT' ? ' <span class="badge warn">Draft</span>' : ''}</td><td>${esc(x.description)}${x.memo ? `<div class="small muted">${esc(x.memo)}</div>` : ''}</td><td>${esc(x.project_code || '-')}</td><td class="num">${num(x.debit) ? rp(x.debit) : ''}</td><td class="num">${num(x.credit) ? rp(x.credit) : ''}</td><td class="num">${dk(bal)}</td></tr>`;
+      X.push([x.journal_date, x.journal_no || 'DRAFT #' + x.journal_id, x.description, x.project_code || '', num(x.debit), num(x.credit), bal]);
+    });
+    html += (d.lines.length ? '' : emptyRow(7, 'Tidak ada mutasi di periode ini')) + `<tr class="total"><td colspan="6">Saldo akhir</td><td class="num">${dk(bal)}</td></tr></table></div>`;
+  } else if (r.report === 'PL') {
+    const rev = d.accounts.filter((a) => a.account_type === 'REVENUE');
+    const cogs = d.accounts.filter((a) => a.account_type === 'EXPENSE' && a.account_code.startsWith('5-'));
+    const opex = d.accounts.filter((a) => a.account_type === 'EXPENSE' && !a.account_code.startsWith('5-'));
+    const sum = (arr) => arr.reduce((t, a) => t + num(a.amount), 0);
+    const R = sum(rev), C = sum(cogs), O = sum(opex);
+    const rows = (arr) => arr.map((a) => `<tr class="link" data-gl="${esc(a.account_code)}"><td class="ind">${esc(a.account_code)} · ${esc(a.account_name)}</td><td class="num">${rpN(a.amount)}</td></tr>`).join('') || '<tr><td class="ind muted">-</td><td></td></tr>';
+    html += `<div class="scroll"><table class="rpt"><tr><th>Keterangan</th><th class="num">Nilai</th></tr>
+      <tr class="sec"><td colspan="2">Pendapatan</td></tr>${rows(rev)}<tr class="sub"><td>Total pendapatan</td><td class="num">${rpN(R)}</td></tr>
+      <tr class="sec"><td colspan="2">Beban pokok proyek</td></tr>${rows(cogs)}<tr class="sub"><td>Total beban pokok proyek</td><td class="num">${rpN(C)}</td></tr>
+      <tr class="sub"><td>Laba kotor</td><td class="num">${rpN(R - C)}</td></tr>
+      <tr class="sec"><td colspan="2">Beban usaha</td></tr>${rows(opex)}<tr class="sub"><td>Total beban usaha</td><td class="num">${rpN(O)}</td></tr>
+      <tr class="total"><td>Laba (rugi) bersih</td><td class="num">${rpN(R - C - O)}</td></tr></table></div>`;
+    html += '<h3 style="margin:18px 0 6px">Per proyek</h3><div class="scroll"><table class="rpt"><tr><th>Proyek</th><th class="num">Pendapatan</th><th class="num">Beban</th><th class="num">Margin</th><th class="num">Margin %</th></tr>'
+      + (d.projects.length ? d.projects.map((p) => { const m = num(p.revenue) - num(p.expense); return `<tr><td>${p.code ? esc(p.code) + ' · ' : ''}${esc(p.name)}</td><td class="num">${rpN(p.revenue)}</td><td class="num">${rpN(p.expense)}</td><td class="num">${rpN(m)}</td><td class="num">${num(p.revenue) ? (m / num(p.revenue) * 100).toFixed(1) + '%' : '-'}</td></tr>`; }).join('') : emptyRow(5, 'Belum ada pendapatan / beban'))
+      + '</table></div>';
+    X.push(['Keterangan', 'Nilai']); X.push(['PENDAPATAN']); rev.forEach((a) => X.push([a.account_code + ' ' + a.account_name, num(a.amount)])); X.push(['Total pendapatan', R]);
+    X.push(['BEBAN POKOK PROYEK']); cogs.forEach((a) => X.push([a.account_code + ' ' + a.account_name, num(a.amount)])); X.push(['Total beban pokok proyek', C]); X.push(['Laba kotor', R - C]);
+    X.push(['BEBAN USAHA']); opex.forEach((a) => X.push([a.account_code + ' ' + a.account_name, num(a.amount)])); X.push(['Total beban usaha', O]); X.push(['Laba (rugi) bersih', R - C - O]);
+    X.push([]); X.push(['Proyek', 'Pendapatan', 'Beban', 'Margin']); d.projects.forEach((p) => X.push([(p.code ? p.code + ' ' : '') + p.name, num(p.revenue), num(p.expense), num(p.revenue) - num(p.expense)]));
+  } else if (r.report === 'BS') {
+    const by = (t) => d.accounts.filter((a) => a.account_type === t);
+    const sum = (arr) => arr.reduce((t, a) => t + num(a.amount), 0);
+    const A = by('ASSET'), L = by('LIABILITY'), E = by('EQUITY');
+    const sa = sum(A), sl = sum(L), se = sum(E) + num(d.priorEarnings) + num(d.currentEarnings);
+    const rows = (arr) => arr.map((a) => `<tr class="link" data-gl="${esc(a.account_code)}"><td class="ind">${esc(a.account_code)} · ${esc(a.account_name)}</td><td class="num">${rpN(a.amount)}</td></tr>`).join('') || '<tr><td class="ind muted">-</td><td></td></tr>';
+    const ok = Math.round(sa - sl - se) === 0;
+    html += `<div class="scroll"><table class="rpt"><tr><th>Keterangan</th><th class="num">Nilai</th></tr>
+      <tr class="sec"><td colspan="2">Aset</td></tr>${rows(A)}<tr class="total"><td>Total aset</td><td class="num">${rpN(sa)}</td></tr>
+      <tr class="sec"><td colspan="2">Liabilitas</td></tr>${rows(L)}<tr class="sub"><td>Total liabilitas</td><td class="num">${rpN(sl)}</td></tr>
+      <tr class="sec"><td colspan="2">Ekuitas</td></tr>${rows(E)}
+      <tr><td class="ind">Laba ditahan (sebelum ${tgl(d.fiscalYearStart)})</td><td class="num">${rpN(d.priorEarnings)}</td></tr>
+      <tr><td class="ind">Laba tahun berjalan</td><td class="num">${rpN(d.currentEarnings)}</td></tr>
+      <tr class="sub"><td>Total ekuitas</td><td class="num">${rpN(se)}</td></tr>
+      <tr class="total"><td>Total liabilitas + ekuitas</td><td class="num">${rpN(sl + se)}</td></tr></table></div>
+      <p class="small ${ok ? 'rpt-ok' : 'rpt-bad'}">${ok ? 'Seimbang: total aset = liabilitas + ekuitas.' : 'Tidak seimbang: selisih ' + rp(sa - sl - se) + (r.project ? ' (wajar kalau difilter per proyek)' : '')}</p>`;
+    X.push(['Keterangan', 'Nilai']); X.push(['ASET']); A.forEach((a) => X.push([a.account_code + ' ' + a.account_name, num(a.amount)])); X.push(['Total aset', sa]);
+    X.push(['LIABILITAS']); L.forEach((a) => X.push([a.account_code + ' ' + a.account_name, num(a.amount)])); X.push(['Total liabilitas', sl]);
+    X.push(['EKUITAS']); E.forEach((a) => X.push([a.account_code + ' ' + a.account_name, num(a.amount)])); X.push(['Laba ditahan', num(d.priorEarnings)]); X.push(['Laba tahun berjalan', num(d.currentEarnings)]); X.push(['Total ekuitas', se]); X.push(['Total liabilitas + ekuitas', sl + se]);
+  } else if (r.report === 'CF') {
+    const c = d.categories || {};
+    const lines = [['OPERASI', 'Arus kas dari operasi'], ['INVESTASI', 'Arus kas dari investasi (aset tetap)'], ['PENDANAAN', 'Arus kas dari pendanaan (modal)'], ['SALDO_AWAL', 'Setoran saldo awal rekening']];
+    const net = lines.reduce((t, [k]) => t + num(c[k]), 0);
+    html += `<div class="scroll"><table class="rpt"><tr><th>Keterangan</th><th class="num">Nilai</th></tr>
+      <tr class="sub"><td>Saldo kas &amp; bank awal periode</td><td class="num">${rpN(d.opening)}</td></tr>
+      ${lines.map(([k, t]) => `<tr><td class="ind">${t}</td><td class="num">${rpN(c[k] || 0)}</td></tr>`).join('')}
+      <tr class="sub"><td>Kenaikan (penurunan) kas</td><td class="num">${rpN(net)}</td></tr>
+      <tr class="total"><td>Saldo kas &amp; bank akhir periode</td><td class="num">${rpN(d.closing)}</td></tr></table></div>
+      <p class="small muted">Kas &amp; bank = semua akun kas kecil (1-11xx) dan bank (1-12xx). Transfer antar rekening sendiri tidak dihitung.</p>
+      <h3 style="margin:18px 0 6px">Rincian</h3><div class="scroll"><table class="rpt"><tr><th>Tanggal</th><th>No. jurnal</th><th>Keterangan</th><th>Kelompok</th><th class="num">Kas masuk / (keluar)</th></tr>`
+      + (d.detail.length ? d.detail.map((x) => `<tr class="link" data-jrn="${esc(x.journal_id)}"><td>${tgl(x.journal_date)}</td><td>${esc(x.journal_no || 'DRAFT #' + x.journal_id)}</td><td>${esc(x.description)}</td><td class="small">${esc((lines.find((l) => l[0] === x.category) || [, x.category])[1])}</td><td class="num">${rpN(x.cash_delta)}</td></tr>`).join('') : emptyRow(5, 'Tidak ada arus kas di periode ini')) + '</table></div>';
+    X.push(['Keterangan', 'Nilai']); X.push(['Saldo kas & bank awal', num(d.opening)]); lines.forEach(([k, t]) => X.push([t, num(c[k] || 0)])); X.push(['Kenaikan (penurunan) kas', net]); X.push(['Saldo kas & bank akhir', num(d.closing)]);
+    X.push([]); X.push(['Tanggal', 'No. jurnal', 'Keterangan', 'Kelompok', 'Kas masuk/(keluar)']); d.detail.forEach((x) => X.push([x.journal_date, x.journal_no || '', x.description, x.category, num(x.cash_delta)]));
+  }
+  $('rptBody').innerHTML = html;
+  rptExportRows = X;
+}
+$('rptBody').addEventListener('click', async (ev) => {
+  const g = ev.target.closest('[data-gl]');
+  if (g) { setRptTab('GL'); runReport(g.dataset.gl); return; }
+  const j = ev.target.closest('[data-jrn]');
+  if (!j) return;
+  try {
+    const r = await api('fin_report', { p_report: 'JOURNAL', p_from: null, p_to: null, p_project_id: null, p_account: null, p_include_draft: true, p_journal_id: Number(j.dataset.jrn) });
+    const x = r.data;
+    const td = x.lines.reduce((t, l) => t + num(l.debit), 0), tc = x.lines.reduce((t, l) => t + num(l.credit), 0);
+    openCash(x.journal_no || 'Jurnal DRAFT #' + x.journal_id, `${tgl(x.journal_date)} · ${x.source_system} · ${x.status === 'POSTED' ? 'diposting ' + (x.posted_by || '') : 'DRAFT, belum diposting'}`,
+      `<p>${esc(x.description)}</p><div class="scroll"><table class="rpt"><tr><th>Akun</th><th>Proyek</th><th class="num">Debit</th><th class="num">Kredit</th></tr>`
+      + x.lines.map((l) => `<tr><td>${esc(l.account_code)} · ${esc(l.account_name || '')}${l.memo ? `<div class="small muted">${esc(l.memo)}</div>` : ''}</td><td>${esc(l.project_code || '-')}</td><td class="num">${num(l.debit) ? rp(l.debit) : ''}</td><td class="num">${num(l.credit) ? rp(l.credit) : ''}</td></tr>`).join('')
+      + `<tr class="total"><td colspan="2">Total</td><td class="num">${rp(td)}</td><td class="num">${rp(tc)}</td></tr></table></div>`, null, null);
+  } catch (e) { toast(e.message, true); }
+});
+let xlsxLoading = null;
+const loadXlsx = () => xlsxLoading || (xlsxLoading = new Promise((res, rej) => {
+  const s = document.createElement('script');
+  s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+  s.onload = () => res(window.XLSX); s.onerror = () => { xlsxLoading = null; rej(new Error('Gagal memuat modul Excel. Cek koneksi internet.')); };
+  document.head.appendChild(s);
+}));
+$('rptExport').addEventListener('click', async () => {
+  if (!rptExportRows) { toast('Tampilkan laporan dulu.', true); return; }
+  try {
+    const XLSX = await loadXlsx();
+    const ws = XLSX.utils.aoa_to_sheet(rptExportRows);
+    ws['!cols'] = [{ wch: 14 }, { wch: 40 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      if (cell && cell.t === 'n') cell.z = '#,##0;(#,##0)';
+    }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, RPT_TITLE[rptKind].slice(0, 31));
+    XLSX.writeFile(wb, `SmartFin_${RPT_TITLE[rptKind].replace(/\s+/g, '_')}_${$('rptTo').value || today()}.xlsx`);
+  } catch (e) { toast(e.message, true); }
+});
+
+const loaders = { laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
 
 // ---------- start ----------
 (function init() {

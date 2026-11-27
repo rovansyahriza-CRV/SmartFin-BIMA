@@ -75,6 +75,7 @@
         <a href="#bank" data-page="bank" data-pic="fin-ap">Bank</a>
         <a href="#kas" data-page="kas" data-pic="fin-ap,fin-pc">Kas &amp; Kasbon</a>
         <a href="#jurnal" data-page="jurnal" data-pic="fin-jv">Jurnal</a>
+        <a href="#laporan" data-page="laporan" data-pic="fin-rpt">Laporan</a>
         <a href="#budget" data-page="budget" data-pic="fin-bva">Budget vs Actual</a>
         <a href="#aset" data-page="aset" data-pic="fin-ast">Aset Tetap</a>
       </nav>
@@ -187,6 +188,32 @@
         <div class="card"><div class="card-head"><h2>Pengajuan Uang Keluar</h2>
             <select id="reqFilter" aria-label="Filter pengajuan"><option value="OPEN">Belum selesai</option><option value="ALL">Semua</option></select></div>
           <div class="scroll"><table id="reqTable"></table></div></div>
+      </section>
+
+      <!-- LAPORAN -->
+      <section id="page-laporan" class="page" hidden>
+        <div class="page-head">
+          <div><h1>Laporan Keuangan</h1><p class="muted">Dihitung langsung dari jurnal. Klik akun untuk buku besar, klik baris buku besar untuk jurnalnya.</p></div>
+          <div class="row-gap"><button type="button" class="btn ghost" id="rptExport">Ekspor Excel</button></div>
+        </div>
+        <div class="card rpt-filter">
+          <div class="rpt-tabs" role="tablist">
+            <button type="button" role="tab" data-rpt="TB" class="active">Neraca Saldo</button>
+            <button type="button" role="tab" data-rpt="GL">Buku Besar</button>
+            <button type="button" role="tab" data-rpt="PL">Laba Rugi</button>
+            <button type="button" role="tab" data-rpt="BS">Neraca</button>
+            <button type="button" role="tab" data-rpt="CF">Arus Kas</button>
+          </div>
+          <div class="rpt-controls">
+            <div><label for="rptFrom">Dari</label><input type="date" id="rptFrom"></div>
+            <div><label for="rptTo">Sampai</label><input type="date" id="rptTo"></div>
+            <div><label for="rptProject">Proyek</label><select id="rptProject"><option value="">Semua proyek</option></select></div>
+            <div id="rptAccWrap" hidden><label for="rptAccount">Akun</label><select id="rptAccount"></select></div>
+            <label class="rpt-check"><input type="checkbox" id="rptDraft" checked> Termasuk jurnal DRAFT</label>
+            <button type="button" class="btn primary" id="rptRun">Tampilkan</button>
+          </div>
+        </div>
+        <div class="card" id="rptCard"><div id="rptBody"><p class="muted">Pilih laporan lalu klik Tampilkan.</p></div></div>
       </section>
 
       <!-- JURNAL -->
