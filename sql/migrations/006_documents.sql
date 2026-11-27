@@ -1,6 +1,6 @@
 -- =====================================================================
 -- SmartFin BIMA — Migration 006: Checklist & Lampiran Dokumen (Gate A / Gate B)
--- Status : DRAFT
+-- Status : ✅ Sudah dijalankan (27 Nov 2026)
 --
 -- Gate A (ADVANCE)  : dicek saat jadwal UANG MUKA mau disetujui (APY)
 --                     PO/SO approved (otomatis SMMS), Invoice DP/Proforma, Jaminan Uang Muka,

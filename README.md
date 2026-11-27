@@ -22,7 +22,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/003_fixed_asset.sql` | Register aset tetap per unit (otomatis dari SMMS) + penyusutan bulanan | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/004_auth_api.sql` | Login SmartFin (PIC = menu, Author = approval) + API `fin_*` untuk halaman web | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/005_payment.sql` | Rekening bank, termin vendor, jadwal & approval pembayaran (APY), biaya tambahan invoice | ✅ Sudah dijalankan (27 Nov 2026) |
-| `sql/migrations/006_documents.sql` | Checklist & upload dokumen invoice (Gate A uang muka, Gate B invoice), invoice HOLD kalau dokumen belum lengkap | ⏳ Belum dijalankan |
+| `sql/migrations/006_documents.sql` | Checklist & upload dokumen invoice (Gate A uang muka, Gate B invoice), invoice HOLD kalau dokumen belum lengkap | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
