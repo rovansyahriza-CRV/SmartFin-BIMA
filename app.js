@@ -771,20 +771,23 @@ $('budgetTable').addEventListener('click', async (ev) => {
 // ---------- aset ----------
 async function loadAset() {
   try {
-    const d = await api('fin_assets');
-    cache.aset = d;
+    const [d, dp] = await Promise.all([api('fin_assets'), api('fin_asset_disposals').catch(() => ({ disposals: [], banks: [] }))]);
+    cache.aset = d; cache.disp = dp;
     $('capInfo').textContent = `Batas kapitalisasi: ${rp(d.capitalizationThreshold)} per unit. Kartu aset dibuat otomatis dari penerimaan SMMS.`;
     $('aCat').innerHTML = '<option value="">Pilih kategori…</option>' + d.categories.map((c) => `<option value="${esc(c.category_code)}">${esc(c.category_name)}</option>`).join('');
-    $('assetTable').innerHTML = '<tr><th>Kode</th><th>Item</th><th>Lokasi / Proyek</th><th>Tgl perolehan</th><th class="num">Harga</th><th>Kategori / Umur</th><th class="num">Akumulasi</th><th class="num">Nilai buku</th><th>Status</th><th></th></tr>' +
+    $('assetTable').innerHTML = '<tr><th>Kode</th><th>Item</th><th>Lokasi / Proyek</th><th class="num">Perolehan</th><th>Kategori</th><th class="num">Nilai buku</th><th>Status</th><th></th></tr>' +
       (d.assets.length ? d.assets.map((a) => `<tr><td><b>${esc(a.asset_code)}</b></td><td>${esc(a.item_description)}<div class="small muted">${esc(a.vendor_name || '')} · ${esc(a.po_number || '')}</div></td>
-        <td>${esc(a.location || '-')}<div class="small muted">Proyek ${esc(a.project_code || '-')}</div></td><td>${tgl(a.acquisition_date)}</td><td class="num">${rp(a.acquisition_cost)}</td>
-        <td>${a.category_code ? esc(a.category_code) + ' · ' + esc(a.useful_life_months) + ' bln' : '<span class="muted">-</span>'}</td>
-        <td class="num">${rp(a.accumulated_depreciation)}</td><td class="num">${rp(a.book_value)}</td><td>${statusBadge(a.status)}</td>
-        <td><button type="button" class="btn ghost small" data-edit-asset="${esc(a.asset_id)}">${a.status === 'PERLU_DILENGKAPI' ? 'Lengkapi' : 'Edit'}</button></td></tr>`).join('') : emptyRow(10, 'Belum ada aset tetap'));
+        <td>${esc(a.location || '-')}<div class="small muted">Proyek ${esc(a.project_code || '-')}</div></td><td class="num">${rp(a.acquisition_cost)}<div class="small muted">${tgl(a.acquisition_date)}</div></td>
+        <td>${a.category_code ? esc(a.category_code) + '<div class="small muted">' + esc(a.useful_life_months) + ' bln</div>' : '<span class="muted">-</span>'}</td>
+        <td class="num">${rp(a.book_value)}<div class="small muted">akum. ${rp(a.accumulated_depreciation)}</div></td><td>${statusBadge(a.status)}</td>
+        <td style="width:1%"><div class="row-gap asset-acts">${['DIJUAL', 'DIHAPUS'].includes(a.status) ? '' : `<button type="button" class="btn ghost small" data-edit-asset="${esc(a.asset_id)}">${a.status === 'PERLU_DILENGKAPI' ? 'Lengkapi' : 'Edit'}</button>${dp.disposals.some((x) => x.asset_id === a.asset_id && x.status === 'PLANNED') ? '<span class="badge warn">Lepas: menunggu PJ</span>' : `<button type="button" class="btn ghost small" data-dispose-asset="${esc(a.asset_id)}">Lepas</button>`}`}</div></td></tr>`).join('') : emptyRow(8, 'Belum ada aset tetap'));
+    renderDisposals();
   } catch (e) { toast(e.message, true); }
 }
 let editingAsset = null;
 $('assetTable').addEventListener('click', (ev) => {
+  const ds = ev.target.closest('[data-dispose-asset]');
+  if (ds) { disposeForm(cache.aset.assets.find((x) => String(x.asset_id) === ds.dataset.disposeAsset)); return; }
   const b = ev.target.closest('[data-edit-asset]');
   if (!b) return;
   const a = cache.aset.assets.find((x) => String(x.asset_id) === b.dataset.editAsset);
@@ -1252,6 +1255,72 @@ $('page-bank').addEventListener('click', async (ev) => {
     el.disabled = true;
     try { const r = await api('fin_approve_recon', { p_recon_id: Number(el.dataset.approveRecon) }); toast(num(r.difference) === 0 ? 'Rekonsiliasi disetujui' : `Rekonsiliasi disetujui dengan selisih ${rp(r.difference)}`); loadBank(); }
     catch (e) { toast(e.message, true); el.disabled = false; }
+  }
+});
+
+
+// ---------- pelepasan aset ----------
+function renderDisposals() {
+  const d = cache.disp; if (!d) return;
+  $('dispTable').innerHTML = '<tr><th>Aset</th><th>Jenis · tanggal</th><th class="num">Nilai buku</th><th class="num">Harga jual</th><th class="num">Laba / (rugi)</th><th>Status</th><th></th></tr>' +
+    (d.disposals.length ? d.disposals.map((x) => {
+      const pj = hasAuthor('PJ', x.project_code);
+      const st = x.status === 'APPROVED' ? `<span class="badge ok">Disetujui</span><div class="small muted">${esc(x.approved_by || '')}</div>`
+        : x.status === 'PLANNED' ? `<span class="badge warn">Menunggu PJ</span><div class="small muted">oleh ${esc(x.requested_by || '')}</div>`
+        : `<span class="badge">Ditolak</span><div class="small overdue">${esc(x.reject_reason || '')}</div>`;
+      const gap = x.dep_gap ? `<div class="small overdue">Penyusutan ${esc(x.dep_gap.slice(5, 7) + '/' + x.dep_gap.slice(0, 4))} belum dijalankan</div>` : '';
+      return `<tr><td><b>${esc(x.asset_code)}</b><div class="small muted">${esc(x.item || '')} · proyek ${esc(x.project_code || '-')}</div></td>
+        <td>${x.kind === 'SALE' ? 'Dijual' : 'Dihapus'} · ${tgl(x.disposal_date)}<div class="small muted">${esc(x.kind === 'SALE' ? (x.buyer ? 'ke ' + x.buyer + ' · ' : '') + (x.bank_label || '') : x.reason)}</div></td>
+        <td class="num">${rp(x.book_value)}<div class="small muted">perolehan ${rp(x.cost)}</div></td>
+        <td class="num">${x.kind === 'SALE' ? rp(x.proceeds) + (num(x.ppn_amount) ? `<div class="small muted">+ PPN ${rp(x.ppn_amount)}</div>` : '') : '-'}</td>
+        <td class="num ${num(x.gain_loss) < 0 ? 'overdue' : 'rpt-ok'}">${num(x.gain_loss) < 0 ? '(' + rp(-num(x.gain_loss)) + ')' : rp(x.gain_loss)}</td>
+        <td>${st}${gap}</td>
+        <td><div class="row-gap" style="flex-wrap:nowrap">${x.status === 'PLANNED' && pj ? `<button type="button" class="btn primary small" data-disp-approve="${x.disposal_id}">Setujui</button><button type="button" class="btn ghost small" data-disp-reject="${x.disposal_id}">Tolak</button>` : ''}</div></td></tr>`;
+    }).join('') : emptyRow(7, 'Belum ada pelepasan aset'));
+}
+function disposeForm(a) {
+  const banks = cache.disp.banks;
+  openCash(`Lepas Aset · ${a.asset_code}`, `${a.item_description} · perolehan ${rp(a.acquisition_cost)} · nilai buku saat ini ${rp(a.book_value)}. Pastikan penyusutan sudah dijalankan sampai bulan sebelum tanggal pelepasan.`, `<div id="dsWrap">
+    <div class="row2"><div><label for="dsKind">Jenis</label><select id="dsKind"><option value="SALE">Dijual</option><option value="WRITE_OFF">Dihapus (rusak / hilang)</option></select></div>
+      <div><label for="dsDate">Tanggal pelepasan</label><input type="date" id="dsDate" value="${today()}" max="${today()}" min="${a.acquisition_date}" required></div></div>
+    <div id="dsSale">
+      <div class="row2"><div><label for="dsPrice">Harga jual tanpa PPN (Rp)</label><input id="dsPrice" inputmode="numeric"></div>
+        <div><label for="dsPpn">PPN dipungut (Rp, kalau ada)</label><input id="dsPpn" inputmode="numeric" value="0"></div></div>
+      <div class="row2"><div><label for="dsBank">Uang masuk ke rekening</label><select id="dsBank">${banks.map((b) => opt(b.bank_id, b.label)).join('') || '<option value="">Belum ada rekening aktif</option>'}</select></div>
+        <div><label for="dsBuyer">Pembeli</label><input id="dsBuyer"></div></div>
+    </div>
+    <label for="dsReason">Alasan / keterangan</label><input id="dsReason" placeholder="mis. tidak terpakai lagi, rusak berat, hilang di site" required>
+    <div class="diff-box" id="dsCalc"></div></div>`, 'Ajukan ke PJ', async () => {
+    const sale = $('dsKind').value === 'SALE';
+    await api('fin_save_asset_disposal', { p_asset_id: a.asset_id, p_kind: $('dsKind').value, p_disposal_date: $('dsDate').value,
+      p_proceeds: sale ? parseNum($('dsPrice').value) : 0, p_ppn_amount: sale ? parseNum($('dsPpn').value) : 0,
+      p_bank_id: sale ? Number($('dsBank').value) || null : null, p_buyer: sale ? fv('dsBuyer') || null : null, p_reason: fv('dsReason') });
+    toast('Pelepasan aset diajukan, menunggu persetujuan PJ');
+  });
+  const calc = () => {
+    const sale = $('dsKind').value === 'SALE';
+    $('dsSale').hidden = !sale;
+    const price = sale ? parseNum($('dsPrice').value) : 0, gl = price - num(a.book_value);
+    $('dsCalc').innerHTML = `Nilai buku: <b>${rp(a.book_value)}</b> (perolehan ${rp(a.acquisition_cost)} − akumulasi ${rp(a.accumulated_depreciation)})`
+      + (sale ? `<br>Harga jual: ${rp(price)}` : '')
+      + `<br>${gl >= 0 ? 'Laba' : 'Rugi'} pelepasan: <b class="${gl < 0 ? 'overdue' : 'rpt-ok'}">${rp(Math.abs(gl))}</b>`
+      + '<br><span class="small muted">Nilai final dihitung ulang saat PJ menyetujui.</span>';
+  };
+  $('dsWrap').addEventListener('input', calc); $('dsWrap').addEventListener('change', calc); calc();
+}
+$('dispTable').addEventListener('click', async (ev) => {
+  const ap = ev.target.closest('[data-disp-approve]'), rj = ev.target.closest('[data-disp-reject]');
+  if (ap) {
+    const x = cache.disp.disposals.find((y) => String(y.disposal_id) === ap.dataset.dispApprove);
+    if (!confirm(`Setujui pelepasan ${x.asset_code} (${x.kind === 'SALE' ? 'dijual ' + rp(x.proceeds) : 'dihapus'})? Aset berhenti disusutkan dan jurnal langsung terposting.`)) return;
+    ap.disabled = true;
+    try { await api('fin_decide_asset_disposal', { p_disposal_id: x.disposal_id, p_approve: true, p_reason: null }); toast(`${x.asset_code} dilepas, jurnal terposting`); loadAset(); }
+    catch (e) { toast(e.message, true); ap.disabled = false; }
+  } else if (rj) {
+    const id = Number(rj.dataset.dispReject);
+    openCash('Tolak Pelepasan Aset', '', '<label for="cReason">Alasan penolakan</label><input id="cReason" required>', 'Tolak', async () => {
+      await api('fin_decide_asset_disposal', { p_disposal_id: id, p_approve: false, p_reason: fv('cReason') }); toast('Pelepasan ditolak');
+    });
   }
 });
 

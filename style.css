@@ -357,3 +357,10 @@ table.rpt td.ind{padding-left:30px}
   h1{font-size:22px}
   .row2{grid-template-columns:1fr}
 }
+
+/* ---------- tabel aset ---------- */
+#assetTable td:first-child{white-space:nowrap}
+#assetTable td:nth-child(2){min-width:180px}
+#assetTable td:last-child .row-gap{justify-content:flex-end}
+#assetTable .badge{white-space:nowrap}
+#assetTable .asset-acts{flex-direction:column;align-items:stretch;gap:6px;min-width:96px}

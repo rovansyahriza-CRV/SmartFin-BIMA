@@ -29,6 +29,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/010_reports.sql` | Menu Laporan (PIC FIN-RPT): neraca saldo, buku besar, laba rugi + per proyek, neraca, arus kas, detail jurnal | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/011_ar.sql` | Piutang klien (PIC FIN-AR, approve PJ): invoice dari SMS approved + manual, retensi, PPN/PPh per invoice, penerimaan ke bank | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/012_payroll.sql` | Payroll (PIC FIN-PR): jurnal gaji bulanan dari Fusion4 dengan alokasi proyek, pembayaran THP / BPJS / PPh 21 (approve APY) | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/013_asset_disposal.sql` | Pelepasan aset tetap (dijual / dihapus): diajukan FIN-AST, disetujui PJ, jurnal laba/rugi | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -92,7 +93,7 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | | `FIN-ALL` | Semua menu SmartFin |
 | PIC / Author | `ALL` | **Super admin**: semua menu + semua approval (AI, PJ, AB, APY, APC). Saat trial hanya 1 admin |
 | Author (approval) | `AI` / `AI-014` | Approve invoice, untuk semua proyek atau hanya proyek 014 |
-| | `PJ` / `PJ-014` | Posting jurnal, approve saldo awal / mutasi bank / rekonsiliasi (migration 009), approve invoice klien & penerimaan per proyek (migration 011) |
+| | `PJ` / `PJ-014` | Posting jurnal, approve saldo awal / mutasi bank / rekonsiliasi (migration 009), approve invoice klien & penerimaan per proyek (migration 011), approve pelepasan aset (migration 013) |
 | | `AB` | Approve budget/RAB |
 | | `APY` | Approve pembayaran vendor, isi kas site, pengeluaran langsung, kasbon, pembayaran gaji/BPJS/PPh 21 (migration 012) |
 | | `APC` / `APC-014` | Approve nota petty cash & nota kasbon (migration 008) |
@@ -249,3 +250,15 @@ Menu **Payroll** (PIC `FIN-PR`) membaca hasil *Proses Payroll Bulanan* Fusion4 (
 4. **Pembayaran** (setelah jurnal POSTED): FIN-PR klik **Bayar** untuk THP, BPJS, atau PPh 21; APY menyetujui → Dr Hutang Gaji/BPJS/PPh 21 / Cr Bank, langsung POSTED. Tidak boleh melebihi sisa hutang periode itu.
 
 Jurnal ditolak kalau ada potongan gaji di luar BPJS & PPh 21 (belum didukung) atau ada divisi yang tidak punya proyek internal (atur alokasinya dulu).
+
+### Pelepasan aset tetap (migration 013)
+
+Di menu **Aset Tetap**, tombol **Lepas** di tiap aset (PIC `FIN-AST`) untuk aset yang **dijual** atau **dihapus** (rusak / hilang). Author `PJ` / `PJ-<proyek>` menyetujui di tabel *Pelepasan Aset*.
+
+- Syarat: penyusutan sudah dijalankan sampai bulan sebelum tanggal pelepasan (kalau aset masih AKTIF), supaya nilai buku benar.
+- Saat disetujui: nilai buku dihitung ulang, status aset jadi DIJUAL / DIHAPUS (tidak disusutkan lagi, tidak bisa diedit), jurnal langsung POSTED.
+
+| Jenis | Jurnal |
+|---|---|
+| Dijual | Dr Bank (harga + PPN) + Dr 1-2900 Akumulasi / Cr 1-2100 Aset Tetap + Cr 2-1500 PPN Keluaran; selisih harga jual vs nilai buku → Cr 4-9200 Laba atau Dr 6-1500 Rugi Pelepasan Aset |
+| Dihapus | Dr 1-2900 Akumulasi + Dr 6-1500 Rugi (nilai buku) / Cr 1-2100 Aset Tetap |
