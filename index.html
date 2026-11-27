@@ -72,6 +72,7 @@
         <a href="#dashboard" data-page="dashboard" data-pic="fin,fin-ap,fin-jv,fin-bva,fin-ast">Dashboard</a>
         <a href="#ap" data-page="ap" data-pic="fin-ap">Hutang Vendor (AP)</a>
         <a href="#bayar" data-page="bayar" data-pic="fin-ap">Pembayaran</a>
+        <a href="#bank" data-page="bank" data-pic="fin-ap">Bank</a>
         <a href="#kas" data-page="kas" data-pic="fin-ap,fin-pc">Kas &amp; Kasbon</a>
         <a href="#jurnal" data-page="jurnal" data-pic="fin-jv">Jurnal</a>
         <a href="#budget" data-page="budget" data-pic="fin-bva">Budget vs Actual</a>
@@ -127,6 +128,15 @@
         </div>
         <div class="kpis" id="payKpis"></div>
         <div class="card"><div class="card-head"><h2>Jadwal Pembayaran</h2></div><div class="scroll"><table id="payTable"></table></div></div>
+      </section>
+
+      <!-- BANK -->
+      <section id="page-bank" class="page" hidden>
+        <div class="page-head">
+          <div><h1>Bank</h1><p class="muted">Rekening, saldo, saldo awal, mutasi, dan rekonsiliasi. Diinput FIN-AP, disetujui PJ.</p></div>
+          <div class="row-gap"><button type="button" class="btn ghost" data-refresh="bank">Muat ulang</button></div>
+        </div>
+        <div class="kpis" id="bankKpis"></div>
         <div class="grid2">
           <div class="card"><div class="card-head"><h2>Rekening Bank</h2></div><div class="scroll"><table id="bankTable"></table></div></div>
           <form class="card" id="bankForm">

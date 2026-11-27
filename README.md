@@ -116,7 +116,7 @@ Menu yang muncul mengikuti PIC akun. Tombol approval (Posting, Approve) hanya mu
 - Kalau satu vendor mengirim termin lebih dari sekali, yang dipakai adalah kiriman **terakhir**.
 - Uang muka yang sudah dibayar otomatis memotong hutang saat invoice di-approve. Uang muka yang belum dibayar dibatalkan dan digabung ke pelunasan.
 - Alur bayar: pemegang **APY** menyetujui, lalu PIC FIN-AP menandai **lunas** dengan memilih rekening, tanggal, dan nomor bukti. Approver dan pembayar boleh orang yang sama. Kalau dibayar sebagian, sisanya otomatis jadi jadwal baru.
-- Rekening bank dikelola di halaman Pembayaran. Tiap rekening otomatis mendapat sub-akun COA `1-12xx`.
+- Rekening bank dikelola di menu **Bank**. Tiap rekening otomatis mendapat sub-akun COA `1-12xx`.
 - Invoice bisa memuat **biaya mobilisasi / jasa lain**. Biaya ini langsung jadi beban 5-1200, dan totalnya tidak boleh melebihi penawaran vendor di RFQ.
 - Perbaikan: `ALL` di kolom PIC sekarang juga memberi semua level approval (super admin).
 
@@ -174,7 +174,7 @@ Serah terima belum diminta di tahap uang muka.
 
 ### Saldo awal, mutasi & rekonsiliasi bank (migration 009)
 
-Ada di halaman **Pembayaran**, di bawah Rekening Bank. Semua diinput **FIN-AP** dan disetujui **PJ**; begitu disetujui, jurnalnya langsung POSTED.
+Ada di menu **Bank** (PIC FIN-AP). Semua diinput **FIN-AP** dan disetujui **PJ**; begitu disetujui, jurnalnya langsung POSTED.
 
 | Jenis | Jurnal |
 |---|---|

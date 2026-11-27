@@ -537,12 +537,6 @@ async function loadBayar() {
           <td class="num">${rp(p.status === 'PAID' ? (p.paid_amount || p.amount) : p.amount)}</td><td>${payBadge(p.status)}${p.docs_missing ? ' <span class="badge warn" title="Dokumen belum lengkap: ' + esc(p.docs_missing) + '">HOLD</span>' : ''}${who}</td><td>${action}</td></tr>`;
       }).join('') : emptyRow(7, 'Tidak ada jadwal untuk filter ini'));
 
-    renderBank(await api('fin_bank_overview').catch((e) => { toast(e.message, true); return null; }));
-    const bal = d.bankBalances || {};
-    $('bankTable').innerHTML = '<tr><th>Rekening</th><th>Akun COA</th><th class="num">Saldo (dari jurnal)</th><th>Status</th></tr>' +
-      (d.banks.length ? d.banks.map((b) => `<tr><td><b>${esc(b.account_label)}</b><div class="small muted">${esc(b.bank_name)}${b.account_last4 ? ' · ****' + esc(b.account_last4) : ''}</div></td>
-        <td>${esc(b.coa_code)}</td><td class="num">${rp(bal[b.bank_id])}</td><td>${b.is_active ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>'}</td></tr>`).join('')
-        : emptyRow(4, 'Belum ada rekening. Tambahkan dulu sebelum menandai pembayaran lunas.'));
   } catch (e) { toast(e.message, true); }
 }
 $('payFilter').addEventListener('change', loadBayar);
@@ -591,7 +585,7 @@ $('bankForm').addEventListener('submit', async (ev) => {
       p_account_last4: $('bkLast4').value || null, p_is_active: true });
     toast(`Rekening tersimpan (akun ${r.coa_code})`);
     $('bankForm').reset();
-    loadBayar();
+    loadBank();
   } catch (e) { toast(e.message, true); }
 });
 
@@ -949,7 +943,7 @@ $('page-kas').addEventListener('click', async (ev) => {
   } else if ((b = t('data-reject-req'))) rejectForm('req', Number(b.dataset.rejectReq), 'pengajuan');
   else if ((b = t('data-pay-req'))) {
     const r = reqOf(b.dataset.payReq);
-    if (!d.banks.length) { toast('Tambahkan rekening bank dulu di halaman Pembayaran.', true); return; }
+    if (!d.banks.length) { toast('Tambahkan rekening bank dulu di menu Bank.', true); return; }
     const pay = r.kind === 'DIRECT' ? num(r.amount) - num(r.pph23_amount) : num(r.amount);
     openCash('Tandai Dibayar', `${KIND_LABEL[r.kind]} · ${r.kind === 'TOPUP' ? r.fund_name : r.kind === 'KASBON' ? r.employee_name : r.payee} · ${rp(pay)}`, `
       <label for="cBank">Dibayar dari rekening</label><select id="cBank" required>${bankOptions()}</select>
@@ -979,9 +973,28 @@ $('page-kas').addEventListener('click', async (ev) => {
 const BTX_LABEL = { OPENING: 'Saldo awal', ADMIN_FEE: 'Biaya admin bank', INTEREST: 'Bunga / jasa giro', INTEREST_TAX: 'Pajak bunga',
   TRANSFER: 'Transfer antar rekening', OTHER_IN: 'Uang masuk lain', OTHER_OUT: 'Uang keluar lain' };
 const BTX_IN = ['OPENING', 'INTEREST', 'OTHER_IN'];
+async function loadBank() {
+  try { renderBank(await api('fin_bank_overview')); } catch (e) { toast(e.message, true); }
+}
 function renderBank(b) {
   cache.bank = b;
   if (!b) return;
+  const act = b.banks.filter((x) => x.is_active);
+  const pend = b.txns.filter((t) => t.status === 'PLANNED');
+  const noOpen = act.filter((x) => !x.opening || x.opening.status !== 'APPROVED');
+  const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
+  $('bankKpis').innerHTML =
+    kpi('Total saldo bank', rpShort(act.reduce((t, x) => t + num(x.balance), 0)), `${act.length} rekening aktif`) +
+    kpi('Mutasi menunggu PJ', String(pend.length), pend.length ? rpShort(pend.reduce((t, x) => t + num(x.amount), 0)) : 'tidak ada', pend.length > 0) +
+    kpi('Belum ada saldo awal', String(noOpen.length), noOpen.length ? noOpen.map((x) => x.label).join(', ') : 'semua rekening lengkap', noOpen.length > 0);
+  $('bankTable').innerHTML = '<tr><th>Rekening</th><th>Akun COA</th><th class="num">Saldo (dari jurnal)</th><th>Saldo awal</th><th>Rekonsiliasi terakhir</th></tr>' +
+    (b.banks.length ? b.banks.map((x) => {
+      const o = x.opening, r = x.last_recon;
+      const op = !o ? '<span class="small overdue">Belum diisi</span>' : `${tgl(o.date)} · ${rpShort(o.amount)}${o.status === 'PLANNED' ? ' <span class="badge warn">Menunggu PJ</span>' : ''}`;
+      const rc = !r ? '<span class="small muted">-</span>' : `${tgl(r.period_end)} ${r.status === 'APPROVED' ? '<span class="badge ok">OK</span>' : '<span class="badge warn">Menunggu PJ</span>'}${num(r.difference) ? `<div class="small overdue">selisih ${rp(r.difference)}</div>` : ''}`;
+      return `<tr><td><b>${esc(x.label)}</b><div class="small muted">${esc(x.bank_name)}${x.last4 ? ' · ****' + esc(x.last4) : ''}${x.is_active ? '' : ' · nonaktif'}</div></td>
+        <td>${esc(x.coa_code)}</td><td class="num">${rp(x.balance)}</td><td class="small">${op}</td><td class="small">${rc}</td></tr>`;
+    }).join('') : emptyRow(5, 'Belum ada rekening. Tambahkan lewat form di samping.'));
   const f = $('btxFilter').value;
   const rows = b.txns.filter((t) => f === 'ALL' || t.status === 'PLANNED');
   const canPJ = hasAuthor('PJ');
@@ -1073,7 +1086,7 @@ function reconForm(r) {
   });
 }
 $('newReconBtn').addEventListener('click', () => reconForm(null));
-$('page-bayar').addEventListener('click', async (ev) => {
+$('page-bank').addEventListener('click', async (ev) => {
   const b = cache.bank; if (!b) return;
   const t = (attr) => ev.target.closest(`[${attr}]`);
   let el;
@@ -1081,7 +1094,7 @@ $('page-bayar').addEventListener('click', async (ev) => {
     const x = b.txns.find((y) => String(y.txn_id) === el.dataset.approveBtx);
     if (!confirm(`Setujui ${BTX_LABEL[x.kind].toLowerCase()} ${rp(x.amount)} (${x.bank_label})? Jurnal langsung terposting.`)) return;
     el.disabled = true;
-    try { await api('fin_decide_bank_txn', { p_txn_id: x.txn_id, p_approve: true, p_reason: null }); toast('Mutasi disetujui dan terposting'); loadBayar(); }
+    try { await api('fin_decide_bank_txn', { p_txn_id: x.txn_id, p_approve: true, p_reason: null }); toast('Mutasi disetujui dan terposting'); loadBank(); }
     catch (e) { toast(e.message, true); el.disabled = false; }
   } else if ((el = t('data-reject-btx'))) {
     const id = Number(el.dataset.rejectBtx);
@@ -1091,12 +1104,12 @@ $('page-bayar').addEventListener('click', async (ev) => {
   } else if ((el = t('data-edit-recon'))) reconForm(b.recons.find((r) => String(r.recon_id) === el.dataset.editRecon));
   else if ((el = t('data-approve-recon'))) {
     el.disabled = true;
-    try { const r = await api('fin_approve_recon', { p_recon_id: Number(el.dataset.approveRecon) }); toast(num(r.difference) === 0 ? 'Rekonsiliasi disetujui' : `Rekonsiliasi disetujui dengan selisih ${rp(r.difference)}`); loadBayar(); }
+    try { const r = await api('fin_approve_recon', { p_recon_id: Number(el.dataset.approveRecon) }); toast(num(r.difference) === 0 ? 'Rekonsiliasi disetujui' : `Rekonsiliasi disetujui dengan selisih ${rp(r.difference)}`); loadBank(); }
     catch (e) { toast(e.message, true); el.disabled = false; }
   }
 });
 
-const loaders = { dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
+const loaders = { dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
 
 // ---------- start ----------
 (function init() {
