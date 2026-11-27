@@ -141,6 +141,21 @@
             <button type="submit" class="btn primary">Simpan Rekening</button>
           </form>
         </div>
+        <div class="card">
+          <div class="card-head"><h2>Saldo Awal &amp; Mutasi Bank</h2>
+            <div class="row-gap">
+              <button type="button" class="btn ghost small" id="newOpeningBtn">+ Saldo awal</button>
+              <button type="button" class="btn ghost small" id="newBankTxnBtn">+ Mutasi</button>
+              <select id="btxFilter" aria-label="Filter mutasi"><option value="OPEN">Menunggu PJ</option><option value="ALL">Semua (1 tahun)</option></select>
+            </div></div>
+          <p class="small muted">Saldo awal (tanggal cut-off diisi manual), biaya admin, bunga, pajak bunga, transfer antar rekening, dan mutasi lain. Diinput FIN-AP, disetujui PJ; jurnal langsung terposting.</p>
+          <div class="scroll"><table id="btxTable"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Rekonsiliasi Bank</h2><button type="button" class="btn ghost small" id="newReconBtn">+ Rekonsiliasi</button></div>
+          <p class="small muted">Isi saldo rekening koran per tanggal; selisih dengan saldo SmartFin dihitung otomatis. Disetujui PJ (selisih harus 0 atau diberi penjelasan).</p>
+          <div class="scroll"><table id="reconTable"></table></div>
+        </div>
       </section>
 
       <!-- KAS & KASBON -->

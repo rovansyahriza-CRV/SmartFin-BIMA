@@ -537,6 +537,7 @@ async function loadBayar() {
           <td class="num">${rp(p.status === 'PAID' ? (p.paid_amount || p.amount) : p.amount)}</td><td>${payBadge(p.status)}${p.docs_missing ? ' <span class="badge warn" title="Dokumen belum lengkap: ' + esc(p.docs_missing) + '">HOLD</span>' : ''}${who}</td><td>${action}</td></tr>`;
       }).join('') : emptyRow(7, 'Tidak ada jadwal untuk filter ini'));
 
+    renderBank(await api('fin_bank_overview').catch((e) => { toast(e.message, true); return null; }));
     const bal = d.bankBalances || {};
     $('bankTable').innerHTML = '<tr><th>Rekening</th><th>Akun COA</th><th class="num">Saldo (dari jurnal)</th><th>Status</th></tr>' +
       (d.banks.length ? d.banks.map((b) => `<tr><td><b>${esc(b.account_label)}</b><div class="small muted">${esc(b.bank_name)}${b.account_last4 ? ' · ****' + esc(b.account_last4) : ''}</div></td>
@@ -811,7 +812,7 @@ $('cashForm').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   if (!cashSubmit) return;
   $('cashSubmit').disabled = true; $('cashMsg').textContent = '';
-  try { await cashSubmit(); $('cashDialog').close(); loadKas(); }
+  try { await cashSubmit(); $('cashDialog').close(); (loaders[location.hash.slice(1)] || loadKas)(); }
   catch (e) { $('cashMsg').textContent = e.message; $('cashSubmit').disabled = false; }
 });
 const fv = (id) => $(id).value.trim();
@@ -970,6 +971,128 @@ $('page-kas').addEventListener('click', async (ev) => {
       await api('fin_close_kasbon', { p_request_id: r.request_id, p_bank_id: diff !== 0 ? Number(fv('cBank')) : null, p_close_date: fv('cDate'), p_ref: fv('cRef') });
       toast('Kasbon ditutup');
     });
+  }
+});
+
+
+// ---------- saldo awal, mutasi & rekonsiliasi bank ----------
+const BTX_LABEL = { OPENING: 'Saldo awal', ADMIN_FEE: 'Biaya admin bank', INTEREST: 'Bunga / jasa giro', INTEREST_TAX: 'Pajak bunga',
+  TRANSFER: 'Transfer antar rekening', OTHER_IN: 'Uang masuk lain', OTHER_OUT: 'Uang keluar lain' };
+const BTX_IN = ['OPENING', 'INTEREST', 'OTHER_IN'];
+function renderBank(b) {
+  cache.bank = b;
+  if (!b) return;
+  const f = $('btxFilter').value;
+  const rows = b.txns.filter((t) => f === 'ALL' || t.status === 'PLANNED');
+  const canPJ = hasAuthor('PJ');
+  $('btxTable').innerHTML = '<tr><th>Tanggal</th><th>Jenis</th><th>Rekening</th><th>Keterangan</th><th class="num">Nilai</th><th>Status</th><th></th></tr>' +
+    (rows.length ? rows.map((t) => {
+      const sign = t.kind === 'TRANSFER' ? '' : BTX_IN.includes(t.kind) ? '+' : '−';
+      const acts = t.status === 'PLANNED' && canPJ
+        ? `<button type="button" class="btn primary small" data-approve-btx="${esc(t.txn_id)}">Setujui</button><button type="button" class="btn ghost small" data-reject-btx="${esc(t.txn_id)}">Tolak</button>` : '';
+      const st = t.status === 'PLANNED' ? '<span class="badge warn">Menunggu PJ</span>' : t.status === 'APPROVED' ? '<span class="badge ok">Disetujui</span>' : '<span class="badge">Ditolak</span>';
+      const who = t.status === 'REJECTED' ? `<div class="small overdue">${esc(t.reject_reason || '')}</div>` : t.approved_by ? `<div class="small muted">${esc(t.approved_by)}</div>` : `<div class="small muted">oleh ${esc(t.requested_by || '')}</div>`;
+      return `<tr><td>${tgl(t.txn_date)}</td><td>${esc(BTX_LABEL[t.kind])}${t.account_code ? `<div class="small muted">${esc(t.account_code)} ${esc(t.account_name || '')}</div>` : ''}</td>
+        <td>${esc(t.bank_label)}${t.to_bank_label ? ' → ' + esc(t.to_bank_label) : ''}</td>
+        <td>${esc(t.description)}${t.ref_no ? `<div class="small muted">${esc(t.ref_no)}</div>` : ''}</td>
+        <td class="num">${sign} ${rp(t.amount)}</td><td>${st}${who}</td><td><div class="row-gap">${acts}</div></td></tr>`;
+    }).join('') : emptyRow(7, f === 'OPEN' ? 'Tidak ada mutasi yang menunggu persetujuan' : 'Belum ada mutasi'));
+  $('reconTable').innerHTML = '<tr><th>Per tanggal</th><th>Rekening</th><th class="num">Rekening koran</th><th class="num">SmartFin</th><th class="num">Selisih</th><th>Status</th><th></th></tr>' +
+    (b.recons.length ? b.recons.map((r) => {
+      const diff = num(r.statement_balance) - num(r.system_now);
+      const acts = r.status === 'DRAFT' ? [
+        hasPic('fin-ap') ? `<button type="button" class="btn ghost small" data-edit-recon="${esc(r.recon_id)}">Ubah</button>` : '',
+        canPJ ? `<button type="button" class="btn primary small" data-approve-recon="${esc(r.recon_id)}">Setujui</button>` : ''].join('') : '';
+      return `<tr><td>${tgl(r.period_end)}</td><td>${esc(r.bank_label)}</td><td class="num">${rp(r.statement_balance)}</td>
+        <td class="num">${rp(r.status === 'APPROVED' ? r.system_balance : r.system_now)}</td>
+        <td class="num ${Math.abs(r.status === 'APPROVED' ? num(r.difference) : diff) > 0 ? 'overdue' : ''}">${rp(r.status === 'APPROVED' ? r.difference : diff)}${r.notes ? `<div class="small muted">${esc(r.notes)}</div>` : ''}</td>
+        <td>${r.status === 'APPROVED' ? `<span class="badge ok">Disetujui</span><div class="small muted">${esc(r.approved_by || '')}</div>` : '<span class="badge warn">Menunggu PJ</span>'}</td>
+        <td><div class="row-gap">${acts}</div></td></tr>`;
+    }).join('') : emptyRow(7, 'Belum ada rekonsiliasi'));
+  const ho = hasPic('fin-ap');
+  ['newOpeningBtn', 'newBankTxnBtn', 'newReconBtn'].forEach((id) => { $(id).hidden = !ho; });
+}
+$('btxFilter').addEventListener('change', () => renderBank(cache.bank));
+const activeBanks = () => (cache.bank ? cache.bank.banks.filter((b) => b.is_active) : []);
+const bankOpts = (list, sel) => list.map((b) => opt(b.bank_id, `${b.label} (${b.bank_name})`, String(b.bank_id) === String(sel))).join('');
+$('newOpeningBtn').addEventListener('click', () => {
+  const list = activeBanks().filter((b) => !b.opening);
+  if (!list.length) { toast(activeBanks().length ? 'Semua rekening sudah punya saldo awal.' : 'Tambahkan rekening bank dulu.', true); return; }
+  openCash('Saldo Awal Rekening', 'Isi sesuai saldo rekening koran pada tanggal cut-off (mulai pakai SmartFin). Satu kali per rekening.', `
+    <label for="cBank">Rekening</label><select id="cBank" required>${bankOpts(list)}</select>
+    <div class="row2"><div><label for="cDate">Tanggal cut-off</label><input type="date" id="cDate" max="${today()}" required></div>
+      <div><label for="cAmt">Saldo per tanggal cut-off (Rp)</label><input id="cAmt" inputmode="numeric" required></div></div>
+    <label for="cRef">No. / periode rekening koran</label><input id="cRef" placeholder="mis. RK Okt 2026">
+    <p class="small muted">Mutasi sebelum tanggal cut-off tidak bisa diinput. Jurnal: Bank / Ekuitas Saldo Awal (3-9000).</p>`, 'Ajukan ke PJ', async () => {
+    await api('fin_save_bank_txn', { p_kind: 'OPENING', p_bank_id: Number(fv('cBank')), p_to_bank_id: null, p_txn_date: fv('cDate'),
+      p_amount: parseNum(fv('cAmt')), p_account_code: null, p_project_id: null, p_description: 'Saldo awal per ' + fv('cDate'), p_ref_no: fv('cRef') });
+    toast('Saldo awal diajukan, menunggu persetujuan PJ');
+  });
+});
+$('newBankTxnBtn').addEventListener('click', () => {
+  const list = activeBanks();
+  if (!list.length) { toast('Tambahkan rekening bank dulu.', true); return; }
+  const accs = cache.bank.accounts.map((a) => opt(a.code, `${a.code} · ${a.name}`)).join('');
+  const projs = opt('', '— tanpa proyek —') + cache.bank.projects.map((p) => opt(p.project_id, `${p.code} · ${p.name}`)).join('');
+  openCash('Mutasi Bank', 'Transaksi bank yang tidak lewat modul lain.', `
+    <div class="row2"><div><label for="cKind">Jenis</label><select id="cKind">${['ADMIN_FEE', 'INTEREST', 'INTEREST_TAX', 'TRANSFER', 'OTHER_IN', 'OTHER_OUT'].map((k) => opt(k, BTX_LABEL[k])).join('')}</select></div>
+      <div><label for="cBank">Rekening</label><select id="cBank" required>${bankOpts(list)}</select></div></div>
+    <div id="cToWrap" hidden><label for="cTo">Ke rekening</label><select id="cTo">${bankOpts(list)}</select></div>
+    <div id="cAccWrap" hidden><div class="row2"><div><label for="cAcc">Akun lawan</label><select id="cAcc">${accs}</select></div>
+      <div><label for="cProj">Proyek</label><select id="cProj">${projs}</select></div></div></div>
+    <div class="row2"><div><label for="cDate">Tanggal</label><input type="date" id="cDate" value="${today()}" max="${today()}" required></div>
+      <div><label for="cAmt">Nilai (Rp)</label><input id="cAmt" inputmode="numeric" required></div></div>
+    <div class="row2"><div><label for="cDesc">Keterangan</label><input id="cDesc" required></div>
+      <div><label for="cRef">No. referensi</label><input id="cRef"></div></div>`, 'Ajukan ke PJ', async () => {
+    const k = fv('cKind');
+    await api('fin_save_bank_txn', { p_kind: k, p_bank_id: Number(fv('cBank')), p_to_bank_id: k === 'TRANSFER' ? Number(fv('cTo')) : null,
+      p_txn_date: fv('cDate'), p_amount: parseNum(fv('cAmt')), p_account_code: ['OTHER_IN', 'OTHER_OUT'].includes(k) ? fv('cAcc') : null,
+      p_project_id: ['OTHER_IN', 'OTHER_OUT'].includes(k) ? (fv('cProj') || null) : null, p_description: fv('cDesc'), p_ref_no: fv('cRef') });
+    toast('Mutasi diajukan, menunggu persetujuan PJ');
+  });
+  const sync = () => {
+    const k = $('cKind').value;
+    $('cToWrap').hidden = k !== 'TRANSFER';
+    $('cAccWrap').hidden = !['OTHER_IN', 'OTHER_OUT'].includes(k);
+    if (!$('cDesc').dataset.touched) $('cDesc').value = BTX_LABEL[k];
+  };
+  $('cKind').addEventListener('change', sync);
+  $('cDesc').addEventListener('input', () => { $('cDesc').dataset.touched = '1'; });
+  sync();
+});
+function reconForm(r) {
+  const list = cache.bank.banks;
+  if (!list.length) { toast('Tambahkan rekening bank dulu.', true); return; }
+  openCash(r ? 'Ubah Rekonsiliasi' : 'Rekonsiliasi Bank', 'Saldo SmartFin dihitung dari jurnal sampai tanggal yang dipilih.', `
+    <div class="row2"><div><label for="cBank">Rekening</label><select id="cBank" required ${r ? 'disabled' : ''}>${bankOpts(list, r && r.bank_id)}</select></div>
+      <div><label for="cDate">Per tanggal</label><input type="date" id="cDate" value="${r ? r.period_end : today()}" max="${today()}" required ${r ? 'disabled' : ''}></div></div>
+    <label for="cAmt">Saldo akhir rekening koran (Rp)</label><input id="cAmt" inputmode="numeric" value="${r ? num(r.statement_balance).toLocaleString('id-ID') : ''}" required>
+    <label for="cNotes">Penjelasan selisih (wajib kalau masih ada selisih)</label><input id="cNotes" value="${esc(r ? r.notes || '' : '')}">`, 'Simpan', async () => {
+    const res = await api('fin_save_recon', { p_bank_id: Number(fv('cBank')), p_period_end: fv('cDate'), p_statement_balance: parseNum(fv('cAmt')), p_notes: fv('cNotes') });
+    toast(num(res.difference) === 0 ? 'Rekonsiliasi cocok, menunggu persetujuan PJ' : `Tersimpan. Selisih ${rp(res.difference)}`, num(res.difference) !== 0);
+  });
+}
+$('newReconBtn').addEventListener('click', () => reconForm(null));
+$('page-bayar').addEventListener('click', async (ev) => {
+  const b = cache.bank; if (!b) return;
+  const t = (attr) => ev.target.closest(`[${attr}]`);
+  let el;
+  if ((el = t('data-approve-btx'))) {
+    const x = b.txns.find((y) => String(y.txn_id) === el.dataset.approveBtx);
+    if (!confirm(`Setujui ${BTX_LABEL[x.kind].toLowerCase()} ${rp(x.amount)} (${x.bank_label})? Jurnal langsung terposting.`)) return;
+    el.disabled = true;
+    try { await api('fin_decide_bank_txn', { p_txn_id: x.txn_id, p_approve: true, p_reason: null }); toast('Mutasi disetujui dan terposting'); loadBayar(); }
+    catch (e) { toast(e.message, true); el.disabled = false; }
+  } else if ((el = t('data-reject-btx'))) {
+    const id = Number(el.dataset.rejectBtx);
+    openCash('Tolak Mutasi', '', '<label for="cReason">Alasan penolakan</label><input id="cReason" required>', 'Tolak', async () => {
+      await api('fin_decide_bank_txn', { p_txn_id: id, p_approve: false, p_reason: fv('cReason') }); toast('Mutasi ditolak');
+    });
+  } else if ((el = t('data-edit-recon'))) reconForm(b.recons.find((r) => String(r.recon_id) === el.dataset.editRecon));
+  else if ((el = t('data-approve-recon'))) {
+    el.disabled = true;
+    try { const r = await api('fin_approve_recon', { p_recon_id: Number(el.dataset.approveRecon) }); toast(num(r.difference) === 0 ? 'Rekonsiliasi disetujui' : `Rekonsiliasi disetujui dengan selisih ${rp(r.difference)}`); loadBayar(); }
+    catch (e) { toast(e.message, true); el.disabled = false; }
   }
 });
 

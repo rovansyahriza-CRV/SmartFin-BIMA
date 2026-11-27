@@ -25,6 +25,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/006_documents.sql` | Checklist & upload dokumen invoice (Gate A uang muka, Gate B invoice), invoice HOLD kalau dokumen belum lengkap | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/007_payment_doc_hold.sql` | Pembayaran HOLD kalau dokumen belum lengkap, hand over dihitung sebagai bukti terima site | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/008_cash.sql` | Petty cash site, pengeluaran langsung tanpa PO, kasbon karyawan, hak akses FIN-PC & APC | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/009_bank.sql` | Saldo awal rekening (cut-off manual), mutasi bank lain-lain, rekonsiliasi bulanan | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -85,7 +86,7 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | | `FIN-ALL` | Semua menu SmartFin |
 | PIC / Author | `ALL` | **Super admin**: semua menu + semua approval (AI, PJ, AB, APY, APC). Saat trial hanya 1 admin |
 | Author (approval) | `AI` / `AI-014` | Approve invoice, untuk semua proyek atau hanya proyek 014 |
-| | `PJ` | Posting jurnal |
+| | `PJ` | Posting jurnal, approve saldo awal / mutasi bank / rekonsiliasi (migration 009) |
 | | `AB` | Approve budget/RAB |
 | | `APY` | Approve pembayaran, isi kas site, pengeluaran langsung, kasbon |
 | | `APC` / `APC-014` | Approve nota petty cash & nota kasbon (migration 008) |
@@ -170,4 +171,20 @@ Serah terima belum diminta di tahap uang muka.
 - Foto nota wajib (faktur pajak wajib kalau ada PPN). Tanpa dokumen, nota tidak bisa disetujui APC dan pengeluaran langsung HOLD.
 - Pemegang kas (hanya FIN-PC) cuma melihat kas, nota, dan kasbon miliknya. FIN-AP, APC, dan APY melihat semuanya.
 - Nota yang disetujui dan pengeluaran langsung yang dibayar masuk ke **komitmen & realisasi Budget vs Actual** proyeknya.
+
+### Saldo awal, mutasi & rekonsiliasi bank (migration 009)
+
+Ada di halaman **Pembayaran**, di bawah Rekening Bank. Semua diinput **FIN-AP** dan disetujui **PJ**; begitu disetujui, jurnalnya langsung POSTED.
+
+| Jenis | Jurnal |
+|---|---|
+| Saldo awal (tanggal cut-off diisi manual, 1x per rekening) | Dr Bank / Cr 3-9000 Ekuitas Saldo Awal |
+| Biaya admin bank | Dr 6-1400 / Cr Bank |
+| Bunga / jasa giro | Dr Bank / Cr 4-9100 |
+| Pajak bunga (PPh final dipotong bank) | Dr 6-1410 / Cr Bank |
+| Transfer antar rekening sendiri | Dr Bank tujuan / Cr Bank asal |
+| Uang masuk / keluar lain | Bank vs akun lawan yang dipilih (bukan akun kas/bank) |
+
+- Mutasi bertanggal sebelum tanggal saldo awal ditolak. Mutasi yang sudah disetujui tidak bisa ditolak; koreksi dengan mutasi baru.
+- **Rekonsiliasi**: FIN-AP isi saldo akhir rekening koran per tanggal, SmartFin menghitung selisih dengan saldo jurnal sampai tanggal itu. PJ menyetujui kalau selisih 0, atau kalau selisihnya sudah diberi penjelasan.
 
