@@ -187,7 +187,7 @@ const NAV = [
   { group: 'Kas, Hutang & Piutang', items: [
     { page: 'ap', label: 'Hutang Vendor (AP)', pic: 'fin-ap' },
     { page: 'bayar', label: 'Pembayaran', pic: 'fin-ap' },
-    { page: 'bank', label: 'Bank', pic: 'fin-ap' },
+    { page: 'bank', label: 'Bank', pic: 'fin-ap,fin-jv' },
     { page: 'kas', label: 'Kas & Kasbon', pic: 'fin-ap,fin-pc' },
     { page: 'ar', label: 'Piutang Klien (AR)', pic: 'fin-ar,fin-jv' },
     { page: 'payroll', label: 'Payroll', pic: 'fin-pr,fin-ap' }] },
@@ -1173,6 +1173,7 @@ function renderBank(b) {
     }).join('') : emptyRow(7, 'Belum ada rekonsiliasi'));
   const ho = hasPic('fin-ap');
   ['newOpeningBtn', 'newBankTxnBtn', 'newReconBtn'].forEach((id) => { $(id).hidden = !ho; });
+  $('bankForm').hidden = !ho;
 }
 $('btxFilter').addEventListener('change', () => renderBank(cache.bank));
 const activeBanks = () => (cache.bank ? cache.bank.banks.filter((b) => b.is_active) : []);
