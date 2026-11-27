@@ -31,6 +31,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/012_payroll.sql` | Payroll (PIC FIN-PR): jurnal gaji bulanan dari Fusion4 dengan alokasi proyek, pembayaran THP / BPJS / PPh 21 (approve APY) | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/013_asset_disposal.sql` | Pelepasan aset tetap (dijual / dihapus): diajukan FIN-AST, disetujui PJ, jurnal laba/rugi | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/014_bank_fin_jv.sql` | Menu Bank bisa dibuka FIN-JV (approver PJ tidak perlu FIN-AP); input tetap FIN-AP | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/015_tax.sql` | Menu Pajak (PIC FIN-TAX): rekap PPN (masa = tanggal faktur), PPh 21, PPh 23, PPh dipotong klien, tanggal faktur | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -89,6 +90,7 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | | `FIN-AST` | Aset tetap |
 | | `FIN-AR` | Piutang klien: invoice ke klien & penerimaan uang (migration 011) |
 | | `FIN-PR` | Payroll: jurnal gaji dari Fusion4, alokasi proyek, pembayaran gaji/BPJS/PPh 21 (migration 012). Pemegang `FIN-AP` hanya melihat total, tanpa rincian per karyawan |
+| | `FIN-TAX` | Rekap pajak per masa + melengkapi nomor/tanggal faktur (migration 015) |
 | | `FIN-RPT` | Laporan keuangan: neraca saldo, buku besar, laba rugi, neraca, arus kas (migration 010) |
 | | `FIN-PC` | Kas & Kasbon: pemegang kas site input nota, ajukan isi kas / kasbon (migration 008) |
 | | `FIN-ALL` | Semua menu SmartFin |
@@ -263,3 +265,20 @@ Di menu **Aset Tetap**, tombol **Lepas** di tiap aset (PIC `FIN-AST`) untuk aset
 |---|---|
 | Dijual | Dr Bank (harga + PPN) + Dr 1-2900 Akumulasi / Cr 1-2100 Aset Tetap + Cr 2-1500 PPN Keluaran; selisih harga jual vs nilai buku → Cr 4-9200 Laba atau Dr 6-1500 Rugi Pelepasan Aset |
 | Dihapus | Dr 1-2900 Akumulasi + Dr 6-1500 Rugi (nilai buku) / Cr 1-2100 Aset Tetap |
+
+### Rekap pajak (migration 015)
+
+Menu **Pajak** (PIC `FIN-TAX`) menampilkan rekap per masa (bulan) dari transaksi SmartFin, plus **Ekspor Excel** (sheet Ringkasan, PPN Keluaran, PPN Masukan, PPN WAPU, PPh 23 dipotong BIMA, PPh dipotong klien). Ini bahan lapor SPT, belum file impor Coretax / e-Faktur / e-Bupot.
+
+| Bagian | Sumber | Masa |
+|---|---|---|
+| PPN Keluaran | Invoice klien PPN dipungut BIMA, penjualan aset ber-PPN | Tanggal faktur pajak |
+| PPN Masukan | Invoice vendor, nota kas, pengeluaran langsung ber-PPN | Tanggal faktur pajak |
+| PPN WAPU | Invoice klien yang PPN-nya dipungut klien (informasi) | Tanggal faktur pajak |
+| PPh 21 | Payroll Fusion4 + setoran PPh 21 di menu Payroll | Bulan payroll |
+| PPh 23 dipotong BIMA | Invoice vendor jasa, pengeluaran langsung | Tanggal invoice / bayar |
+| PPh 23 / 4(2) dipotong klien | Penerimaan invoice klien | Tanggal terima |
+| PPh final bunga | Mutasi bank pajak bunga | Tanggal mutasi |
+
+- Kalau tanggal faktur belum diisi, masa sementara memakai tanggal transaksi dan barisnya ditandai **belum diisi**. Klik **Isi faktur** untuk melengkapi nomor & tanggal faktur (FIN-TAX untuk semua dokumen; FIN-AP / FIN-AR / FIN-AST untuk dokumen modulnya sendiri).
+- Tabel **Saldo Akun Pajak** menunjukkan saldo PPN Keluaran, PPN Masukan, Hutang PPh 21, Hutang PPh 23, dan PPh 23 Dibayar Dimuka per akhir masa (jurnal POSTED) untuk cek setoran.

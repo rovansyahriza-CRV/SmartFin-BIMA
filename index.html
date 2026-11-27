@@ -234,6 +234,30 @@
         </div>
       </section>
 
+      <!-- PAJAK -->
+      <section id="page-pajak" class="page" hidden>
+        <div class="page-head">
+          <div><h1>Rekap Pajak</h1><p class="muted">Rekap per masa pajak dari transaksi SmartFin, bahan lapor SPT. Masa PPN mengikuti tanggal faktur pajak. Bukan file impor Coretax / e-Faktur / e-Bupot.</p></div>
+          <div class="row-gap">
+            <label class="sr-only" for="taxPeriod">Masa pajak</label><input type="month" id="taxPeriod">
+            <button type="button" class="btn ghost" data-refresh="pajak">Tampilkan</button>
+            <button type="button" class="btn primary" id="taxExport">Ekspor Excel</button>
+          </div>
+        </div>
+        <div class="kpis" id="taxKpis"></div>
+        <div id="taxNote"></div>
+        <div class="card panel"><div class="card-head"><div><h2>PPN Keluaran</h2><p>Invoice klien PPN dipungut BIMA &amp; penjualan aset</p></div></div><div class="scroll"><table id="taxOut"></table></div></div>
+        <div class="card panel"><div class="card-head"><div><h2>PPN Masukan</h2><p>Invoice vendor, nota kas, pengeluaran langsung yang ada PPN</p></div></div><div class="scroll"><table id="taxIn"></table></div></div>
+        <div class="card panel"><div class="card-head"><div><h2>PPN Dipungut Klien (WAPU)</h2><p>Informasi faktur; PPN disetor langsung oleh klien</p></div></div><div class="scroll"><table id="taxWapu"></table></div></div>
+        <div class="grid2">
+          <div class="card panel"><div class="card-head"><div><h2>PPh 21</h2><p>Dari payroll Fusion4 masa ini</p></div></div><div id="taxPph21" style="padding:16px 20px"></div></div>
+          <div class="card panel"><div class="card-head"><div><h2>Saldo Akun Pajak</h2><p>Per akhir masa, jurnal POSTED</p></div></div><div class="scroll"><table id="taxBal"></table></div></div>
+        </div>
+        <div class="card panel"><div class="card-head"><div><h2>PPh 23 Dipotong BIMA</h2><p>Dari pembayaran ke vendor jasa — bahan bukti potong</p></div></div><div class="scroll"><table id="taxPph23"></table></div></div>
+        <div class="card panel"><div class="card-head"><div><h2>PPh Dipotong Klien</h2><p>PPh 23 (kredit pajak) dan PPh 4(2) final dari penerimaan invoice klien</p></div></div><div class="scroll"><table id="taxClient"></table></div></div>
+        <div class="card panel" id="taxBankCard"><div class="card-head"><div><h2>PPh Final Bunga Bank</h2><p>Dipotong bank</p></div></div><div class="scroll"><table id="taxBank"></table></div></div>
+      </section>
+
       <!-- KAS & KASBON -->
       <section id="page-kas" class="page" hidden>
         <div class="page-head">

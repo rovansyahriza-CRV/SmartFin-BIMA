@@ -175,6 +175,7 @@ const ICON = {
   laporan: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
   ar: 'M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0c1.1.128 1.907 1.077 1.907 2.185ZM9.75 9h.008v.008H9.75V9Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm4.125 4.5h.008v.008h-.008V13.5Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z',
   payroll: 'M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z',
+  pajak: 'M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z',
   truck: 'M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12',
   scale: 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z',
   trend: 'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
@@ -195,7 +196,8 @@ const NAV = [
     { page: 'jurnal', label: 'Jurnal', pic: 'fin-jv' },
     { page: 'budget', label: 'Budget vs Actual', pic: 'fin-bva' },
     { page: 'aset', label: 'Aset Tetap', pic: 'fin-ast' },
-    { page: 'laporan', label: 'Laporan', pic: 'fin-rpt' }] },
+    { page: 'laporan', label: 'Laporan', pic: 'fin-rpt' },
+    { page: 'pajak', label: 'Pajak', pic: 'fin-tax' }] },
 ];
 const navItems = () => NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g.group })));
 const canSee = (page) => { const i = navItems().find((x) => x.page === page); return !!i && hasPic(i.pic); };
@@ -1686,6 +1688,104 @@ $('page-payroll').addEventListener('click', async (ev) => {
   }
 });
 
+// ---------- rekap pajak ----------
+const TAX_SRC = { AR_INVOICE: 'Invoice klien', ASSET_DISPOSAL: 'Jual aset', VENDOR_INVOICE: 'Invoice vendor', CASH_EXPENSE: 'Nota kas', CASH_DIRECT: 'Pengeluaran langsung' };
+async function loadPajak() {
+  if (!$('taxPeriod').value) { const d = new Date(); d.setMonth(d.getMonth() - 1); $('taxPeriod').value = d.toISOString().slice(0, 7); }
+  const [y, m] = $('taxPeriod').value.split('-').map(Number);
+  try { renderPajak(await api('fin_tax_report', { p_year: y, p_month: m })); } catch (e) { toast(e.message, true); }
+}
+function renderPajak(d) {
+  cache.pajak = d;
+  const sum = (arr, k) => arr.reduce((t, x) => t + num(x[k]), 0);
+  const out = d.ppn.filter((x) => x.direction === 'OUT'), inn = d.ppn.filter((x) => x.direction === 'IN'), wapu = d.ppn.filter((x) => x.direction === 'WAPU');
+  const ppnOut = sum(out, 'ppn'), ppnIn = sum(inn, 'ppn'), diff = ppnOut - ppnIn;
+  const noFaktur = d.ppn.filter((x) => !x.faktur_date || !x.faktur_no).length;
+  const pph23 = sum(d.pph23_withheld, 'pph'), p21 = d.pph21;
+  const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
+  $('taxKpis').innerHTML =
+    kpi('PPN Keluaran', rpShort(ppnOut), `${out.length} faktur`) +
+    kpi('PPN Masukan', rpShort(ppnIn), `${inn.length} faktur`) +
+    kpi(diff >= 0 ? 'PPN kurang bayar' : 'PPN lebih bayar', rpShort(Math.abs(diff)), diff >= 0 ? 'Keluaran − Masukan, perlu disetor' : 'Bisa dikompensasi ke masa berikutnya', diff > 0) +
+    kpi('PPh 21', rpShort(p21.amount), p21.payroll_exists ? `${rpShort(p21.paid)} sudah disetor` : 'Belum ada payroll', p21.payroll_exists && num(p21.amount) - num(p21.paid) > 0.004) +
+    kpi('PPh 23 dipotong BIMA', rpShort(pph23), `${d.pph23_withheld.length} transaksi`);
+  $('taxNote').innerHTML = noFaktur ? `<div class="rpt-note">${noFaktur} dokumen PPN belum lengkap nomor / tanggal fakturnya. Masanya sementara dihitung dari tanggal transaksi; klik <b>Isi faktur</b> untuk melengkapi.</div>` : '';
+  const ppnTable = (rows, showProj) => '<tr><th>Tanggal faktur</th><th>No. faktur</th><th>Dokumen</th><th>Lawan transaksi</th><th class="num">DPP</th><th class="num">PPN</th><th></th></tr>' +
+    (rows.length ? rows.map((x) => `<tr><td>${x.faktur_date ? tgl(x.faktur_date) : `<span class="overdue small">belum diisi</span><div class="small muted">trx ${tgl(x.trx_date)}</div>`}</td>
+      <td>${x.faktur_no ? `<span class="code-chip">${esc(x.faktur_no)}</span>` : '<span class="overdue small">belum diisi</span>'}</td>
+      <td>${esc(x.doc_no)}<div class="small muted">${esc(TAX_SRC[x.source] || x.source)}${showProj && x.project_code ? ' · ' + esc(x.project_code) : ''}</div></td>
+      <td>${esc(x.counterparty || '-')}${x.npwp ? `<div class="small muted">NPWP ${esc(x.npwp)}</div>` : ''}</td>
+      <td class="num">${rp(x.dpp)}</td><td class="num"><b>${rp(x.ppn)}</b></td>
+      <td><button type="button" class="btn ghost small" data-tax-faktur="${esc(x.source)}:${esc(x.ref_id)}">${x.faktur_no && x.faktur_date ? 'Ubah' : 'Isi faktur'}</button></td></tr>`).join('')
+      + `<tr class="total"><td colspan="4"><b>Total</b></td><td class="num"><b>${rp(sum(rows, 'dpp'))}</b></td><td class="num"><b>${rp(sum(rows, 'ppn'))}</b></td><td></td></tr>`
+      : emptyRow(7, 'Tidak ada faktur di masa ini'));
+  $('taxOut').innerHTML = ppnTable(out, true);
+  $('taxIn').innerHTML = ppnTable(inn, true);
+  $('taxWapu').innerHTML = ppnTable(wapu, true);
+  $('taxPph21').innerHTML = p21.payroll_exists
+    ? `<div class="diff-box" style="margin:0">Payroll ${p21.employees} karyawan · bruto ${rp(p21.bruto)}<br>PPh 21 masa ini: <b>${rp(p21.amount)}</b>
+        <br>Sudah disetor (disetujui APY): <b>${rp(p21.paid)}</b>${num(p21.pending) ? ` · menunggu APY ${rp(p21.pending)}` : ''}
+        <br>Sisa belum disetor: <b class="${num(p21.amount) - num(p21.paid) > 0.004 ? 'overdue' : 'rpt-ok'}">${rp(num(p21.amount) - num(p21.paid))}</b>
+        <br><span class="small muted">Jurnal payroll: ${esc(p21.journal_status || 'belum dibuat')}. Setoran dicatat di menu Payroll → Bayar (PPh 21).</span></div>`
+    : '<p class="muted">Belum ada payroll Fusion4 untuk masa ini.</p>';
+  const bal = d.balances || {};
+  $('taxBal').innerHTML = '<tr><th>Akun</th><th class="num">Saldo</th><th>Artinya</th></tr>' +
+    [['2-1500', 'PPN Keluaran yang belum dikompensasi / disetor'], ['1-1400', 'PPN Masukan yang belum dikreditkan'], ['2-1400', 'PPh 21 belum disetor'], ['2-1410', 'PPh 23 dipotong belum disetor'], ['1-1450', 'PPh 23 dibayar dimuka (kredit pajak)']]
+      .filter(([c]) => bal[c]).map(([c, t]) => { const b = num(bal[c].balance), v = c.startsWith('2-') ? -b : b; return `<tr><td>${esc(c)} · ${esc(bal[c].name)}</td><td class="num">${rp(v)}</td><td class="small muted">${esc(t)}</td></tr>`; }).join('');
+  $('taxPph23').innerHTML = '<tr><th>Tanggal</th><th>Dokumen</th><th>Vendor</th><th class="num">DPP</th><th class="num">PPh 23</th></tr>' +
+    (d.pph23_withheld.length ? d.pph23_withheld.map((x) => `<tr><td>${tgl(x.trx_date)}</td><td>${esc(x.doc_no)}<div class="small muted">${esc(TAX_SRC[x.source] || x.source)}</div></td><td>${esc(x.counterparty || '-')}${x.npwp ? `<div class="small muted">NPWP ${esc(x.npwp)}</div>` : ''}</td><td class="num">${rp(x.dpp)}</td><td class="num"><b>${rp(x.pph)}</b></td></tr>`).join('')
+      + `<tr class="total"><td colspan="3"><b>Total</b></td><td class="num"><b>${rp(sum(d.pph23_withheld, 'dpp'))}</b></td><td class="num"><b>${rp(pph23)}</b></td></tr>` : emptyRow(5, 'Tidak ada PPh 23 dipotong di masa ini'));
+  $('taxClient').innerHTML = '<tr><th>Tanggal terima</th><th>Invoice</th><th>Klien</th><th>Jenis</th><th class="num">Dasar</th><th class="num">PPh</th></tr>' +
+    (d.pph_by_client.length ? d.pph_by_client.map((x) => `<tr><td>${tgl(x.receipt_date)}</td><td>${esc(x.invoice_no)}<div class="small muted">${esc(x.ref_no || '')}</div></td><td>${esc(x.client || '-')} <span class="code-chip">${esc(x.project_code || '')}</span></td>
+      <td>${x.pph_mode === 'PPH4_2' ? 'PPh 4(2) final' : 'PPh 23'} ${num(x.pph_rate)}%</td><td class="num">${rp(x.base)}</td><td class="num"><b>${rp(x.pph)}</b></td></tr>`).join('')
+      : emptyRow(6, 'Tidak ada PPh dipotong klien di masa ini'));
+  $('taxBankCard').hidden = !d.bank_interest_tax.length;
+  $('taxBank').innerHTML = '<tr><th>Tanggal</th><th>Rekening</th><th>Referensi</th><th class="num">PPh final</th></tr>' +
+    d.bank_interest_tax.map((x) => `<tr><td>${tgl(x.txn_date)}</td><td>${esc(x.bank)}</td><td>${esc(x.ref_no || '-')}</td><td class="num">${rp(x.amount)}</td></tr>`).join('');
+}
+$('taxPeriod').addEventListener('change', loadPajak);
+$('page-pajak').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-tax-faktur]'); if (!b) return;
+  const [src, id] = b.dataset.taxFaktur.split(':');
+  const x = cache.pajak.ppn.find((r) => r.source === src && String(r.ref_id) === id);
+  openCash(`Faktur Pajak · ${x.doc_no}`, `${TAX_SRC[src]} · ${x.counterparty || ''} · PPN ${rp(x.ppn)}. Masa PPN mengikuti tanggal faktur.`, `
+    <div class="row2"><div><label for="fkNo">No. faktur pajak</label><input id="fkNo" value="${esc(x.faktur_no || '')}" placeholder="mis. 010.000-26.12345678"></div>
+      <div><label for="fkDate">Tanggal faktur</label><input type="date" id="fkDate" value="${esc(x.faktur_date || '')}"></div></div>`, 'Simpan faktur', async () => {
+    await api('fin_set_faktur', { p_source: src, p_ref_id: Number(id), p_faktur_no: fv('fkNo') || null, p_faktur_date: $('fkDate').value || null });
+    toast('Faktur tersimpan');
+  });
+});
+$('taxExport').addEventListener('click', async () => {
+  const d = cache.pajak; if (!d) { toast('Tampilkan rekap dulu.', true); return; }
+  try {
+    const XLSX = await loadXlsx();
+    const wb = XLSX.utils.book_new();
+    const masa = `${String(d.month).padStart(2, '0')}/${d.year}`;
+    const add = (name, header, rows) => {
+      const ws = XLSX.utils.aoa_to_sheet([[`SmartFin · ${name} · Masa ${masa}`], [], header, ...rows]);
+      ws['!cols'] = header.map((h) => ({ wch: Math.max(12, h.length + 4) }));
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r; R <= range.e.r; ++R) for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })]; if (cell && cell.t === 'n') cell.z = '#,##0';
+      }
+      XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 31));
+    };
+    const ppnRows = (dir) => d.ppn.filter((x) => x.direction === dir).map((x) => [x.faktur_date || '', x.faktur_no || '', x.doc_no, TAX_SRC[x.source] || x.source, x.counterparty || '', x.npwp || '', x.project_code || '', num(x.dpp), num(x.ppn), x.trx_date]);
+    const ppnHead = ['Tanggal faktur', 'No. faktur', 'Dokumen', 'Sumber', 'Lawan transaksi', 'NPWP', 'Proyek', 'DPP', 'PPN', 'Tanggal transaksi'];
+    const sum = (dir) => d.ppn.filter((x) => x.direction === dir).reduce((t, x) => t + num(x.ppn), 0);
+    add('Ringkasan', ['Pos', 'Nilai'], [['PPN Keluaran', sum('OUT')], ['PPN Masukan', sum('IN')], ['PPN kurang (lebih) bayar', sum('OUT') - sum('IN')], ['PPN dipungut klien (WAPU)', sum('WAPU')],
+      ['PPh 21', num(d.pph21.amount)], ['PPh 21 sudah disetor', num(d.pph21.paid)], ['PPh 23 dipotong BIMA', d.pph23_withheld.reduce((t, x) => t + num(x.pph), 0)],
+      ['PPh 23 dipotong klien', d.pph_by_client.filter((x) => x.pph_mode !== 'PPH4_2').reduce((t, x) => t + num(x.pph), 0)],
+      ['PPh 4(2) dipotong klien', d.pph_by_client.filter((x) => x.pph_mode === 'PPH4_2').reduce((t, x) => t + num(x.pph), 0)]]);
+    add('PPN Keluaran', ppnHead, ppnRows('OUT'));
+    add('PPN Masukan', ppnHead, ppnRows('IN'));
+    add('PPN WAPU', ppnHead, ppnRows('WAPU'));
+    add('PPh 23 dipotong BIMA', ['Tanggal', 'Dokumen', 'Sumber', 'Vendor', 'NPWP', 'DPP', 'PPh 23'], d.pph23_withheld.map((x) => [x.trx_date, x.doc_no, TAX_SRC[x.source] || x.source, x.counterparty || '', x.npwp || '', num(x.dpp), num(x.pph)]));
+    add('PPh dipotong klien', ['Tanggal terima', 'Invoice', 'Klien', 'Proyek', 'Jenis', 'Tarif %', 'Dasar', 'PPh', 'Referensi'], d.pph_by_client.map((x) => [x.receipt_date, x.invoice_no, x.client || '', x.project_code || '', x.pph_mode === 'PPH4_2' ? 'PPh 4(2) final' : 'PPh 23', num(x.pph_rate), num(x.base), num(x.pph), x.ref_no || '']));
+    XLSX.writeFile(wb, `SmartFin_Rekap_Pajak_${d.year}-${String(d.month).padStart(2, '0')}.xlsx`);
+  } catch (e) { toast(e.message, true); }
+});
+
 // ---------- laporan keuangan ----------
 const RPT_TITLE = { TB: 'Neraca Saldo', GL: 'Buku Besar', PL: 'Laba Rugi', BS: 'Neraca', CF: 'Arus Kas' };
 let rptKind = 'TB', rptExportRows = null, rptMeta = null;
@@ -1854,7 +1954,7 @@ $('rptExport').addEventListener('click', async () => {
   } catch (e) { toast(e.message, true); }
 });
 
-const loaders = { payroll: loadPayroll, ar: loadAR, laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
+const loaders = { pajak: loadPajak, payroll: loadPayroll, ar: loadAR, laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
 
 // ---------- start ----------
 (function init() {
