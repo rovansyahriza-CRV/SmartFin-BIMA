@@ -183,6 +183,28 @@
         </div>
       </section>
 
+      <!-- PIUTANG KLIEN (AR) -->
+      <section id="page-ar" class="page" hidden>
+        <div class="page-head">
+          <div><h1>Piutang Klien</h1><p class="muted">Tagihan ke klien dari SMS yang sudah approved atau input manual, retensi, PPN/PPh, dan penerimaan uang. Diinput FIN-AR, disetujui PJ proyek.</p></div>
+          <div class="row-gap">
+            <button type="button" class="btn ghost" data-refresh="ar">Muat ulang</button>
+            <button type="button" class="btn ghost" id="newRetBtn">+ Pencairan retensi</button>
+            <button type="button" class="btn primary" id="newArBtn">+ Invoice klien</button>
+          </div>
+        </div>
+        <div class="kpis" id="arKpis"></div>
+        <div class="card panel">
+          <div class="card-head"><div><h2>Invoice Klien</h2><p>Draft &amp; penerimaan menunggu PJ tampil paling atas</p></div>
+            <select id="arFilter" aria-label="Filter invoice"><option value="OPEN">Belum lunas</option><option value="ALL">Semua (1 tahun)</option></select></div>
+          <div class="scroll"><table id="arTable"></table></div>
+        </div>
+        <div class="card panel">
+          <div class="card-head"><div><h2>SMS Siap Ditagih</h2><p>SMS berstatus APPROVED di SMMS yang belum masuk invoice</p></div></div>
+          <div class="scroll"><table id="arSmsTable"></table></div>
+        </div>
+      </section>
+
       <!-- KAS & KASBON -->
       <section id="page-kas" class="page" hidden>
         <div class="page-head">

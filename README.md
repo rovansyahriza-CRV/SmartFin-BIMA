@@ -27,6 +27,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/008_cash.sql` | Petty cash site, pengeluaran langsung tanpa PO, kasbon karyawan, hak akses FIN-PC & APC | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/009_bank.sql` | Saldo awal rekening (cut-off manual), mutasi bank lain-lain, rekonsiliasi bulanan | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/010_reports.sql` | Menu Laporan (PIC FIN-RPT): neraca saldo, buku besar, laba rugi + per proyek, neraca, arus kas, detail jurnal | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/011_ar.sql` | Piutang klien (PIC FIN-AR, approve PJ): invoice dari SMS approved + manual, retensi, PPN/PPh per invoice, penerimaan ke bank | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -83,12 +84,13 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | | `FIN-JV` | Jurnal |
 | | `FIN-BVA` | Budget vs Actual / RAB |
 | | `FIN-AST` | Aset tetap |
+| | `FIN-AR` | Piutang klien: invoice ke klien & penerimaan uang (migration 011) |
 | | `FIN-RPT` | Laporan keuangan: neraca saldo, buku besar, laba rugi, neraca, arus kas (migration 010) |
 | | `FIN-PC` | Kas & Kasbon: pemegang kas site input nota, ajukan isi kas / kasbon (migration 008) |
 | | `FIN-ALL` | Semua menu SmartFin |
 | PIC / Author | `ALL` | **Super admin**: semua menu + semua approval (AI, PJ, AB, APY, APC). Saat trial hanya 1 admin |
 | Author (approval) | `AI` / `AI-014` | Approve invoice, untuk semua proyek atau hanya proyek 014 |
-| | `PJ` | Posting jurnal, approve saldo awal / mutasi bank / rekonsiliasi (migration 009) |
+| | `PJ` / `PJ-014` | Posting jurnal, approve saldo awal / mutasi bank / rekonsiliasi (migration 009), approve invoice klien & penerimaan per proyek (migration 011) |
 | | `AB` | Approve budget/RAB |
 | | `APY` | Approve pembayaran, isi kas site, pengeluaran langsung, kasbon |
 | | `APC` / `APC-014` | Approve nota petty cash & nota kasbon (migration 008) |
@@ -206,3 +208,23 @@ Satu menu **Laporan** (PIC `FIN-RPT`; `ALL` dan `FIN-ALL` otomatis termasuk) den
 - Klik akun di Neraca Saldo, Laba Rugi, atau Neraca untuk membuka Buku Besar akun itu.
 - Filter proyek memakai proyek di baris jurnal; neraca per proyek wajar tidak seimbang.
 
+
+### Piutang klien (migration 011)
+
+Menu **Piutang Klien (AR)**: diinput PIC `FIN-AR`, disetujui Author `PJ` (atau `PJ-<kode proyek>`). Pemegang `FIN-JV` + PJ juga bisa membuka menu untuk approve. Begitu disetujui, jurnal langsung POSTED.
+
+- **Dasar tagihan**: SMS berstatus APPROVED di SMMS operational (nilai diambil dari item SMS, tidak bisa diketik ulang) ditambah baris manual. Satu SMS hanya bisa masuk satu invoice; kalau invoice ditolak, SMS-nya dilepas dan bisa ditagih lagi.
+- **Nomor invoice** otomatis `INV/BIMA/yyyy/mm/nnn` kalau dikosongkan.
+- **Retensi** (% per invoice progress) dicatat di 1-1310 Piutang Retensi, lalu dicairkan lewat invoice jenis *Pencairan retensi* (tidak boleh melebihi sisa retensi proyek).
+- **Pajak dipilih per invoice**, dasar = nilai yang jatuh tagih (DPP − retensi):
+
+| Pilihan | Perlakuan |
+|---|---|
+| PPN WAPU | Dicatat untuk faktur, tidak ditagih dan tidak dijurnal (klien yang setor) |
+| PPN dipungut BIMA | Ikut ditagih, Cr 2-1500 PPN Keluaran |
+| PPh 23 | Dipotong klien saat bayar → Dr 1-1450 PPh 23 Dibayar Dimuka |
+| PPh 4(2) | Dipotong klien saat bayar → Dr 6-1420 Beban PPh Final Jasa Konstruksi |
+
+- **Jurnal invoice**: Dr 1-1300 Piutang Usaha + Dr 1-1310 Piutang Retensi / Cr 4-1000 Pendapatan Kontrak + Cr 2-1500 (PPN dipungut BIMA). Pencairan retensi: Dr 1-1300 / Cr 1-1310.
+- **Penerimaan**: FIN-AR isi uang masuk ke rekening + PPh yang dipotong klien; PJ menyetujui → Dr Bank + Dr PPh / Cr 1-1300. Status invoice otomatis *Dibayar sebagian* / *Lunas*. Penerimaan tidak boleh melebihi sisa piutang (termasuk yang masih menunggu PJ).
+- No. faktur pajak bisa dilengkapi setelah invoice disetujui (buka detail invoice).

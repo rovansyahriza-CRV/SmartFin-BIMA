@@ -173,6 +173,7 @@ const ICON = {
   budget: 'M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6ZM13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z',
   aset: 'm21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9',
   laporan: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
+  ar: 'M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0c1.1.128 1.907 1.077 1.907 2.185ZM9.75 9h.008v.008H9.75V9Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm4.125 4.5h.008v.008h-.008V13.5Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z',
   truck: 'M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12',
   scale: 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z',
   trend: 'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
@@ -182,11 +183,12 @@ const svgIcon = (k) => `<svg fill="none" viewBox="0 0 24 24" stroke-width="1.6" 
 const NAV = [
   { group: 'Ringkasan', items: [
     { page: 'dashboard', label: 'Dashboard', pic: 'fin,fin-ap,fin-jv,fin-bva,fin-ast' }] },
-  { group: 'Kas & Hutang', items: [
+  { group: 'Kas, Hutang & Piutang', items: [
     { page: 'ap', label: 'Hutang Vendor (AP)', pic: 'fin-ap' },
     { page: 'bayar', label: 'Pembayaran', pic: 'fin-ap' },
     { page: 'bank', label: 'Bank', pic: 'fin-ap' },
-    { page: 'kas', label: 'Kas & Kasbon', pic: 'fin-ap,fin-pc' }] },
+    { page: 'kas', label: 'Kas & Kasbon', pic: 'fin-ap,fin-pc' },
+    { page: 'ar', label: 'Piutang Klien (AR)', pic: 'fin-ar,fin-jv' }] },
   { group: 'Pembukuan & Kontrol', items: [
     { page: 'jurnal', label: 'Jurnal', pic: 'fin-jv' },
     { page: 'budget', label: 'Budget vs Actual', pic: 'fin-bva' },
@@ -1251,6 +1253,227 @@ $('page-bank').addEventListener('click', async (ev) => {
   }
 });
 
+// ---------- piutang klien (AR) ----------
+const AR_ST = { DRAFT: ['warn', 'Menunggu PJ'], APPROVED: ['', 'Belum dibayar'], PARTIAL: ['amber', 'Dibayar sebagian'], PAID: ['ok', 'Lunas'], REJECTED: ['', 'Ditolak'] };
+const PPN_LABEL = { NONE: 'Tanpa PPN', WAPU: 'PPN dipungut klien (WAPU)', COLLECT: 'PPN dipungut BIMA' };
+const PPH_LABEL = { NONE: 'Tanpa PPh', PPH23: 'PPh 23', PPH4_2: 'PPh 4(2) final konstruksi' };
+const arLeft = (i) => num(i.receivable_amount) - num(i.settled);
+async function loadAR() {
+  try { renderAR(await api('fin_ar_overview')); } catch (e) { toast(e.message, true); }
+}
+function renderAR(d) {
+  cache.ar = d;
+  if (!d) return;
+  const k = d.kpi;
+  const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
+  $('arKpis').innerHTML =
+    kpi('Piutang belum diterima', rpShort(k.piutang), 'Invoice disetujui, belum lunas') +
+    kpi('Lewat jatuh tempo', rpShort(k.jatuhTempo), num(k.jatuhTempo) > 0 ? 'Perlu ditagih ulang ke klien' : 'Tidak ada yang lewat', num(k.jatuhTempo) > 0) +
+    kpi('Retensi tertahan', rpShort(k.retensi), 'Bisa dicairkan lewat invoice retensi') +
+    kpi('SMS belum ditagih', rpShort(k.smsBelumDitagih), `${d.billableSms.length} SMS approved`, d.billableSms.length > 0) +
+    kpi('Menunggu PJ', String(k.menunggu), 'Invoice draft + penerimaan', k.menunggu > 0);
+  const f = $('arFilter').value;
+  const rows = d.invoices.filter((i) => f === 'ALL' || !['PAID', 'REJECTED'].includes(i.status));
+  $('arTable').innerHTML = '<tr><th>No. invoice</th><th>Proyek / klien</th><th>Tanggal · jatuh tempo</th><th class="num">Ditagih</th><th class="num">Sisa</th><th>Status</th><th></th></tr>' +
+    (rows.length ? rows.map((i) => {
+      const [cls, label] = AR_ST[i.status] || ['', i.status];
+      const pj = hasAuthor('PJ', i.project_code);
+      const late = ['APPROVED', 'PARTIAL'].includes(i.status) && i.due_date < today();
+      const acts = [];
+      if (i.status === 'DRAFT') {
+        if (hasPic('fin-ar')) acts.push(`<button type="button" class="btn ghost small" data-ar-edit="${i.invoice_id}">Ubah</button>`);
+        if (pj) acts.push(`<button type="button" class="btn primary small" data-ar-approve="${i.invoice_id}">Setujui</button><button type="button" class="btn ghost small" data-ar-reject="${i.invoice_id}">Tolak</button>`);
+      }
+      if (['APPROVED', 'PARTIAL'].includes(i.status) && hasPic('fin-ar') && arLeft(i) - num(i.pending) > 0)
+        acts.push(`<button type="button" class="btn primary small" data-ar-receive="${i.invoice_id}">Terima uang</button>`);
+      const pend = i.receipts.filter((r) => r.status === 'PLANNED');
+      const pendTxt = pend.length ? `<div class="small" style="color:var(--amber)">${pend.length} penerimaan menunggu PJ (${rp(i.pending)})</div>` : '';
+      return `<tr><td><a href="#ar" data-ar-view="${i.invoice_id}">${esc(i.invoice_no)}</a><div class="small muted">${i.kind === 'RETENTION' ? 'Pencairan retensi' : 'Progress'}${i.faktur_no ? ' · FP ' + esc(i.faktur_no) : ''}</div></td>
+        <td><span class="code-chip">${esc(i.project_code)}</span> ${esc(i.client_name || '')}<div class="small muted">${esc(i.description)}</div></td>
+        <td>${tgl(i.invoice_date)}<div class="small ${late ? 'overdue' : 'muted'}">${tgl(i.due_date)}${late ? ' · lewat' : ''}</div></td>
+        <td class="num">${rp(i.receivable_amount)}</td>
+        <td class="num">${['DRAFT', 'REJECTED'].includes(i.status) ? '<span class="muted">—</span>' : rp(arLeft(i))}</td>
+        <td><span class="badge ${cls}">${esc(label)}</span>${i.status === 'REJECTED' ? `<div class="small overdue">${esc(i.reject_reason || '')}</div>` : ''}${pendTxt}</td>
+        <td><div class="row-gap" style="flex-wrap:nowrap">${acts.join('')}</div></td></tr>`
+        + pend.map((r) => `<tr><td></td><td colspan="2" class="small">↳ Penerimaan ${tgl(r.receipt_date)} ke ${esc(r.bank_label)}${r.ref_no ? ' · ' + esc(r.ref_no) : ''} <span class="muted">oleh ${esc(r.requested_by || '')}</span></td>
+            <td class="num small">${rp(num(r.cash_amount) + num(r.pph_amount))}${num(r.pph_amount) ? `<div class="muted">PPh ${rp(r.pph_amount)}</div>` : ''}</td><td></td><td><span class="badge warn">Menunggu PJ</span></td>
+            <td><div class="row-gap" style="flex-wrap:nowrap">${pj ? `<button type="button" class="btn primary small" data-rc-approve="${r.receipt_id}">Setujui</button><button type="button" class="btn ghost small" data-rc-reject="${r.receipt_id}">Tolak</button>` : ''}</div></td></tr>`).join('');
+    }).join('') : emptyRow(7, f === 'OPEN' ? 'Tidak ada invoice yang belum lunas' : 'Belum ada invoice klien'));
+  $('arSmsTable').innerHTML = '<tr><th>No. SMS</th><th>Proyek</th><th>Tanggal</th><th class="num">Nilai</th><th></th></tr>' +
+    (d.billableSms.length ? d.billableSms.map((s) => `<tr><td><span class="code-chip">${esc(s.number)}</span></td><td>${esc(s.project_code)}</td><td>${tgl(s.document_date)}</td><td class="num">${rp(s.amount)}</td>
+      <td>${hasPic('fin-ar') ? `<button type="button" class="btn ghost small" data-ar-sms="${esc(s.sms_id)}">Buat invoice</button>` : ''}</td></tr>`).join('')
+      : emptyRow(5, 'Tidak ada SMS approved yang belum ditagih'));
+  $('newArBtn').hidden = $('newRetBtn').hidden = !hasPic('fin-ar');
+}
+$('arFilter').addEventListener('change', () => renderAR(cache.ar));
+
+// Form invoice: kind PROGRESS / RETENTION; inv = invoice draft yang diubah; preSms = SMS yang langsung dicentang
+function arForm(kind, inv, preSms) {
+  const d = cache.ar;
+  const projects = kind === 'RETENTION' ? d.projects.filter((p) => num(p.retention_open) > 0 || (inv && inv.project_id === p.project_id)) : d.projects;
+  if (!projects.length) { toast('Belum ada retensi tertahan yang bisa dicairkan.', true); return; }
+  const smsOf = (pid) => d.billableSms.filter((s) => s.project_id === pid).concat(inv ? inv.lines.filter((l) => l.sms_id).map((l) => ({ sms_id: l.sms_id, number: l.sms_number, amount: l.amount, project_id: inv.project_id })) : []);
+  const preProj = inv ? inv.project_id : preSms ? d.billableSms.find((s) => s.sms_id === preSms).project_id : projects[0].project_id;
+  const manual = inv ? inv.lines.filter((l) => !l.sms_id) : [];
+  const due = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+  const manRow = (l = {}) => `<div class="doc-up ar-man" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) auto">
+      <input class="am-desc" placeholder="${kind === 'RETENTION' ? 'mis. Retensi termin 1' : 'mis. Mobilisasi, pekerjaan tambah'}" value="${esc(l.description || '')}">
+      <input class="am-amt" inputmode="numeric" placeholder="Nilai (Rp)" value="${l.amount ? num(l.amount).toLocaleString('id-ID') : ''}">
+      <button type="button" class="btn ghost small am-del" aria-label="Hapus baris">✕</button></div>`;
+  openCash(inv ? `Ubah ${inv.invoice_no}` : kind === 'RETENTION' ? 'Invoice Pencairan Retensi' : 'Invoice Klien Baru',
+    kind === 'RETENTION' ? 'Mencairkan retensi yang ditahan klien dari invoice progress proyek yang sama.' : 'Centang SMS yang sudah approved klien dan/atau tambah baris manual. Disetujui PJ proyek; jurnal langsung terposting.', `<div id="aWrap">
+    <div class="row2"><div><label for="aProj">Proyek</label><select id="aProj" required ${inv ? '' : ''}>${projects.map((p) => opt(p.project_id, `${p.code} · ${p.name}${kind === 'RETENTION' ? ' (sisa retensi ' + rpShort(p.retention_open) + ')' : ''}`, p.project_id === preProj)).join('')}</select></div>
+      <div><label for="aNo">No. invoice (kosongkan = otomatis)</label><input id="aNo" value="${esc(inv ? inv.invoice_no : '')}" placeholder="INV/BIMA/yyyy/mm/nnn"></div></div>
+    <div class="small muted" id="aClient" style="margin-top:6px"></div>
+    <div class="row2"><div><label for="aDate">Tanggal invoice</label><input type="date" id="aDate" value="${inv ? inv.invoice_date : today()}" required></div>
+      <div><label for="aDue">Jatuh tempo</label><input type="date" id="aDue" value="${inv ? inv.due_date : due}" required></div></div>
+    <label for="aDesc">Keterangan</label><input id="aDesc" value="${esc(inv ? inv.description : '')}" placeholder="${kind === 'RETENTION' ? 'mis. Pencairan retensi 5% termin 1–3' : 'mis. Tagihan termin 1 pekerjaan maintenance'}" required>
+    ${kind === 'PROGRESS' ? '<div class="doc-box"><div class="doc-box-head"><b>SMS approved</b><span class="small muted">nilai diambil dari SMMS</span></div><div id="aSms"></div></div>' : ''}
+    <div class="doc-box"><div class="doc-box-head"><b>${kind === 'RETENTION' ? 'Nilai pencairan' : 'Baris manual'}</b><button type="button" class="btn ghost small" id="aAddMan">+ Baris</button></div><div id="aMan">${(manual.length ? manual : kind === 'RETENTION' ? [{}] : []).map(manRow).join('')}</div></div>
+    <div class="row2">
+      ${kind === 'PROGRESS' ? `<div><label for="aRet">Retensi ditahan klien (%)</label><input id="aRet" inputmode="decimal" value="${inv ? num(inv.retention_pct) : 0}"></div>` : '<div></div>'}
+      <div><label for="aFaktur">No. faktur pajak (bisa diisi nanti)</label><input id="aFaktur" value="${esc(inv && inv.faktur_no || '')}"></div></div>
+    <div class="row2">
+      <div><label for="aPpn">PPN</label><select id="aPpn">${Object.entries(PPN_LABEL).map(([v, t]) => opt(v, t, (inv ? inv.ppn_mode : 'WAPU') === v)).join('')}</select></div>
+      <div><label for="aPpnRate">Tarif PPN (%)</label><input id="aPpnRate" inputmode="decimal" value="${inv && num(inv.ppn_rate) ? num(inv.ppn_rate) : 11}"></div></div>
+    <div class="row2">
+      <div><label for="aPph">PPh dipotong klien</label><select id="aPph">${Object.entries(PPH_LABEL).map(([v, t]) => opt(v, t, (inv ? inv.pph_mode : 'NONE') === v)).join('')}</select></div>
+      <div><label for="aPphRate">Tarif PPh (%)</label><input id="aPphRate" inputmode="decimal" value="${inv && num(inv.pph_rate) ? num(inv.pph_rate) : 2}"></div></div>
+    <div class="diff-box" id="aCalc"></div></div>`, inv ? 'Simpan perubahan' : 'Simpan draft', async () => {
+    const lines = [...document.querySelectorAll('#aSms input:checked')].map((c) => ({ sms_id: c.value }))
+      .concat([...document.querySelectorAll('#aMan .ar-man')].map((r) => ({ description: r.querySelector('.am-desc').value.trim(), amount: parseNum(r.querySelector('.am-amt').value) }))
+        .filter((l) => l.description || l.amount));
+    if (!lines.length) throw new Error('Isi minimal satu baris tagihan');
+    const r = await api('fin_save_ar_invoice', {
+      p_invoice_id: inv ? inv.invoice_id : null, p_kind: kind, p_project_id: $('aProj').value, p_invoice_no: fv('aNo') || null,
+      p_invoice_date: $('aDate').value, p_due_date: $('aDue').value, p_description: fv('aDesc'),
+      p_retention_pct: kind === 'PROGRESS' ? Number(fv('aRet').replace(',', '.')) || 0 : 0,
+      p_ppn_mode: $('aPpn').value, p_ppn_rate: Number(fv('aPpnRate').replace(',', '.')) || 0,
+      p_pph_mode: $('aPph').value, p_pph_rate: Number(fv('aPphRate').replace(',', '.')) || 0,
+      p_faktur_no: fv('aFaktur') || null, p_lines: lines });
+    toast(`${r.invoice_no} tersimpan sebagai draft, menunggu PJ`);
+  });
+  const renderSms = () => {
+    const pid = $('aProj').value, p = d.projects.find((x) => x.project_id === pid);
+    $('aClient').textContent = p && p.client ? 'Klien: ' + p.client : 'Klien belum diisi di data proyek';
+    if (kind !== 'PROGRESS') return;
+    const list = smsOf(pid);
+    const picked = inv ? inv.lines.filter((l) => l.sms_id).map((l) => l.sms_id) : preSms ? [preSms] : [];
+    $('aSms').innerHTML = list.length ? list.map((s) => `<label class="rpt-check" style="justify-content:space-between;border-top:1px solid var(--line-soft)">
+        <span><input type="checkbox" value="${esc(s.sms_id)}" data-amt="${num(s.amount)}" ${picked.includes(s.sms_id) ? 'checked' : ''}> ${esc(s.number)}</span><b class="num">${rp(s.amount)}</b></label>`).join('')
+      : '<p class="small muted">Tidak ada SMS approved yang belum ditagih untuk proyek ini.</p>';
+    calc();
+  };
+  const calc = () => {
+    const dpp = [...document.querySelectorAll('#aSms input:checked')].reduce((t, c) => t + num(c.dataset.amt), 0)
+      + [...document.querySelectorAll('#aMan .am-amt')].reduce((t, x) => t + parseNum(x.value), 0);
+    const retPct = kind === 'PROGRESS' ? Number(fv('aRet').replace(',', '.')) || 0 : 0;
+    const ret = Math.round(dpp * retPct / 100), base = dpp - ret;
+    const ppnM = $('aPpn').value, pphM = $('aPph').value;
+    const ppn = ppnM === 'NONE' ? 0 : Math.floor(base * (Number(fv('aPpnRate').replace(',', '.')) || 0) / 100);
+    const pph = pphM === 'NONE' ? 0 : Math.floor(base * (Number(fv('aPphRate').replace(',', '.')) || 0) / 100);
+    const recv = base + (ppnM === 'COLLECT' ? ppn : 0);
+    $('aPpnRate').disabled = ppnM === 'NONE'; $('aPphRate').disabled = pphM === 'NONE';
+    $('aCalc').innerHTML = `${kind === 'RETENTION' ? 'Nilai pencairan' : 'DPP (nilai pekerjaan)'}: <b>${rp(dpp)}</b>`
+      + (ret ? `<br>Retensi ditahan ${retPct}%: − ${rp(ret)} <span class="muted">(masuk Piutang Retensi)</span>` : '')
+      + (ppnM !== 'NONE' ? `<br>PPN: ${ppnM === 'COLLECT' ? '+ ' : ''}${rp(ppn)} <span class="muted">${ppnM === 'WAPU' ? '(dipungut & disetor klien, tidak ditagih)' : ''}</span>` : '')
+      + `<br>Total piutang ditagih: <b>${rp(recv)}</b>`
+      + (pph ? `<br>PPh dipotong klien: − ${rp(pph)}` : '')
+      + `<br>Perkiraan uang masuk: <b>${rp(recv - pph)}</b>`;
+  };
+  $('aProj').addEventListener('change', renderSms);
+  $('aWrap').addEventListener('input', calc);
+  $('aWrap').addEventListener('change', calc);
+  $('aAddMan').addEventListener('click', () => { $('aMan').insertAdjacentHTML('beforeend', manRow()); });
+  $('aMan').addEventListener('click', (ev) => { const b = ev.target.closest('.am-del'); if (b) { b.closest('.ar-man').remove(); calc(); } });
+  $('aWrap').addEventListener('focusout', (ev) => { if (ev.target.classList.contains('am-amt') && parseNum(ev.target.value)) ev.target.value = parseNum(ev.target.value).toLocaleString('id-ID'); });
+  renderSms(); calc();
+}
+
+function arReceiveForm(i) {
+  const banks = cache.ar.banks;
+  if (!banks.length) { toast('Belum ada rekening bank aktif. Tambahkan di menu Bank.', true); return; }
+  const left = arLeft(i) - num(i.pending);
+  const pphLeft = Math.max(0, num(i.pph_amount) - i.receipts.filter((r) => r.status !== 'REJECTED').reduce((t, r) => t + num(r.pph_amount), 0));
+  openCash(`Terima Uang · ${i.invoice_no}`, `${i.client_name || ''} · sisa piutang ${rp(left)}. Disetujui PJ, lalu jurnal bank terposting.`, `<div id="rWrap">
+    <div class="row2"><div><label for="rBank">Masuk ke rekening</label><select id="rBank">${banks.map((b) => opt(b.bank_id, b.label)).join('')}</select></div>
+      <div><label for="rDate">Tanggal uang masuk</label><input type="date" id="rDate" value="${today()}" max="${today()}" min="${i.invoice_date}" required></div></div>
+    <div class="row2"><div><label for="rCash">Uang diterima di rekening (Rp)</label><input id="rCash" inputmode="numeric" value="${(left - pphLeft).toLocaleString('id-ID')}" required></div>
+      <div><label for="rPph">PPh dipotong klien (Rp)</label><input id="rPph" inputmode="numeric" value="${pphLeft.toLocaleString('id-ID')}" ${i.pph_mode === 'NONE' ? 'disabled' : ''}></div></div>
+    <label for="rRef">No. referensi transfer / bukti potong</label><input id="rRef" placeholder="mis. TRF-PHM-0012 / BP 23 no. ...">
+    <label for="rNotes">Catatan</label><input id="rNotes">
+    <div class="diff-box" id="rCalc"></div></div>`, 'Kirim ke PJ', async () => {
+    await api('fin_save_ar_receipt', { p_invoice_id: i.invoice_id, p_bank_id: Number($('rBank').value), p_receipt_date: $('rDate').value,
+      p_cash_amount: parseNum($('rCash').value), p_pph_amount: i.pph_mode === 'NONE' ? 0 : parseNum($('rPph').value), p_ref_no: fv('rRef') || null, p_notes: fv('rNotes') || null });
+    toast('Penerimaan tersimpan, menunggu persetujuan PJ');
+  });
+  const calc = () => {
+    const t = parseNum($('rCash').value) + (i.pph_mode === 'NONE' ? 0 : parseNum($('rPph').value));
+    $('rCalc').innerHTML = `Mengurangi piutang: <b>${rp(t)}</b> dari sisa ${rp(left)}<br>Sisa setelah ini: <b class="${t > left ? 'overdue' : ''}">${rp(left - t)}</b>`;
+  };
+  $('rWrap').addEventListener('input', calc); calc();
+}
+
+function arView(i) {
+  const lines = i.lines.map((l) => `<tr><td>${l.sms_number ? `<span class="code-chip">${esc(l.sms_number)}</span> ` : ''}${esc(l.description)}</td><td class="num">${rp(l.amount)}</td></tr>`).join('');
+  const base = num(i.dpp) - num(i.retention_amount);
+  const rc = i.receipts.length ? i.receipts.map((r) => `<tr><td>${tgl(r.receipt_date)} · ${esc(r.bank_label)}${r.ref_no ? `<div class="small muted">${esc(r.ref_no)}</div>` : ''}</td>
+      <td class="num">${rp(r.cash_amount)}${num(r.pph_amount) ? `<div class="small muted">+ PPh ${rp(r.pph_amount)}</div>` : ''}</td>
+      <td>${r.status === 'APPROVED' ? `<span class="badge ok">Disetujui</span><div class="small muted">${esc(r.approved_by || '')}</div>` : r.status === 'PLANNED' ? '<span class="badge warn">Menunggu PJ</span>' : `<span class="badge">Ditolak</span><div class="small overdue">${esc(r.reject_reason || '')}</div>`}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="empty">Belum ada penerimaan</td></tr>';
+  openCash(i.invoice_no, `${i.project_code} · ${i.client_name || ''} · ${tgl(i.invoice_date)} s/d ${tgl(i.due_date)} · ${(AR_ST[i.status] || [, i.status])[1]}`, `
+    <p>${esc(i.description)}</p>
+    <div class="scroll"><table class="rpt"><tr><th>Uraian</th><th class="num">Nilai</th></tr>${lines}
+      <tr class="sub"><td>${i.kind === 'RETENTION' ? 'Nilai pencairan retensi' : 'DPP'}</td><td class="num">${rp(i.dpp)}</td></tr>
+      ${num(i.retention_amount) ? `<tr><td class="ind">Retensi ditahan ${num(i.retention_pct)}%</td><td class="num">(${rp(i.retention_amount)})</td></tr>` : ''}
+      ${i.ppn_mode !== 'NONE' ? `<tr><td class="ind">PPN ${num(i.ppn_rate)}% · ${esc(PPN_LABEL[i.ppn_mode])}</td><td class="num">${i.ppn_mode === 'COLLECT' ? '' : '('}${rp(i.ppn_amount)}${i.ppn_mode === 'COLLECT' ? '' : ')'}</td></tr>` : ''}
+      <tr class="total"><td>Total piutang</td><td class="num">${rp(i.receivable_amount)}</td></tr>
+      ${num(i.pph_amount) ? `<tr><td class="ind">${esc(PPH_LABEL[i.pph_mode])} ${num(i.pph_rate)}% (dipotong klien)</td><td class="num">(${rp(i.pph_amount)})</td></tr>` : ''}
+      <tr><td>Perkiraan uang masuk</td><td class="num">${rp(i.expected_cash)}</td></tr></table></div>
+    ${i.ppn_mode === 'WAPU' ? '<p class="small muted">PPN dipungut dan disetor langsung oleh klien (WAPU), jadi tidak ikut ditagih dan tidak dijurnal. Dasar PPN = ' + rp(base) + '.</p>' : ''}
+    <div class="row2"><div><label for="vFaktur">No. faktur pajak</label><input id="vFaktur" value="${esc(i.faktur_no || '')}" ${hasPic('fin-ar') && i.status !== 'REJECTED' ? '' : 'disabled'}></div><div></div></div>
+    <h3 style="margin-top:16px">Penerimaan</h3>
+    <div class="scroll"><table class="rpt"><tr><th>Tanggal · rekening</th><th class="num">Diterima</th><th>Status</th></tr>${rc}</table></div>
+    <p class="small muted">Dibuat ${esc(i.created_by || '')}${i.approved_by ? ` · ${i.status === 'REJECTED' ? 'ditolak' : 'disetujui'} ${esc(i.approved_by)}` : ''}</p>`,
+  hasPic('fin-ar') && i.status !== 'REJECTED' ? 'Simpan no. faktur' : null, async () => {
+    await api('fin_set_ar_faktur', { p_invoice_id: i.invoice_id, p_faktur_no: fv('vFaktur') || null }); toast('No. faktur tersimpan');
+  });
+}
+
+$('newArBtn').addEventListener('click', () => cache.ar && arForm('PROGRESS'));
+$('newRetBtn').addEventListener('click', () => cache.ar && arForm('RETENTION'));
+$('page-ar').addEventListener('click', async (ev) => {
+  const d = cache.ar; if (!d) return;
+  const t = (attr) => ev.target.closest(`[${attr}]`);
+  const inv = (id) => d.invoices.find((x) => String(x.invoice_id) === String(id));
+  let el;
+  if ((el = t('data-ar-view'))) { ev.preventDefault(); arView(inv(el.dataset.arView)); }
+  else if ((el = t('data-ar-edit'))) { const i = inv(el.dataset.arEdit); arForm(i.kind, i); }
+  else if ((el = t('data-ar-sms'))) arForm('PROGRESS', null, el.dataset.arSms);
+  else if ((el = t('data-ar-receive'))) arReceiveForm(inv(el.dataset.arReceive));
+  else if ((el = t('data-ar-approve'))) {
+    const i = inv(el.dataset.arApprove);
+    if (!confirm(`Setujui ${i.invoice_no} senilai ${rp(i.receivable_amount)} ke ${i.client_name || i.project_code}? Jurnal pendapatan & piutang langsung terposting.`)) return;
+    el.disabled = true;
+    try { await api('fin_decide_ar_invoice', { p_invoice_id: i.invoice_id, p_approve: true, p_reason: null }); toast(`${i.invoice_no} disetujui dan terposting`); loadAR(); }
+    catch (e) { toast(e.message, true); el.disabled = false; }
+  } else if ((el = t('data-ar-reject'))) {
+    const id = Number(el.dataset.arReject);
+    openCash('Tolak Invoice Klien', 'SMS di invoice ini akan dilepas dan bisa ditagih ulang.', '<label for="cReason">Alasan penolakan</label><input id="cReason" required>', 'Tolak', async () => {
+      await api('fin_decide_ar_invoice', { p_invoice_id: id, p_approve: false, p_reason: fv('cReason') }); toast('Invoice ditolak');
+    });
+  } else if ((el = t('data-rc-approve'))) {
+    el.disabled = true;
+    try { await api('fin_decide_ar_receipt', { p_receipt_id: Number(el.dataset.rcApprove), p_approve: true, p_reason: null }); toast('Penerimaan disetujui dan terposting'); loadAR(); }
+    catch (e) { toast(e.message, true); el.disabled = false; }
+  } else if ((el = t('data-rc-reject'))) {
+    const id = Number(el.dataset.rcReject);
+    openCash('Tolak Penerimaan', '', '<label for="cReason">Alasan penolakan</label><input id="cReason" required>', 'Tolak', async () => {
+      await api('fin_decide_ar_receipt', { p_receipt_id: id, p_approve: false, p_reason: fv('cReason') }); toast('Penerimaan ditolak');
+    });
+  }
+});
+
 // ---------- laporan keuangan ----------
 const RPT_TITLE = { TB: 'Neraca Saldo', GL: 'Buku Besar', PL: 'Laba Rugi', BS: 'Neraca', CF: 'Arus Kas' };
 let rptKind = 'TB', rptExportRows = null, rptMeta = null;
@@ -1419,7 +1642,7 @@ $('rptExport').addEventListener('click', async () => {
   } catch (e) { toast(e.message, true); }
 });
 
-const loaders = { laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
+const loaders = { ar: loadAR, laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
 
 // ---------- start ----------
 (function init() {
