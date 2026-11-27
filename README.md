@@ -28,6 +28,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/009_bank.sql` | Saldo awal rekening (cut-off manual), mutasi bank lain-lain, rekonsiliasi bulanan | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/010_reports.sql` | Menu Laporan (PIC FIN-RPT): neraca saldo, buku besar, laba rugi + per proyek, neraca, arus kas, detail jurnal | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/011_ar.sql` | Piutang klien (PIC FIN-AR, approve PJ): invoice dari SMS approved + manual, retensi, PPN/PPh per invoice, penerimaan ke bank | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/012_payroll.sql` | Payroll (PIC FIN-PR): jurnal gaji bulanan dari Fusion4 dengan alokasi proyek, pembayaran THP / BPJS / PPh 21 (approve APY) | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -85,6 +86,7 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | | `FIN-BVA` | Budget vs Actual / RAB |
 | | `FIN-AST` | Aset tetap |
 | | `FIN-AR` | Piutang klien: invoice ke klien & penerimaan uang (migration 011) |
+| | `FIN-PR` | Payroll: jurnal gaji dari Fusion4, alokasi proyek, pembayaran gaji/BPJS/PPh 21 (migration 012). Pemegang `FIN-AP` hanya melihat total, tanpa rincian per karyawan |
 | | `FIN-RPT` | Laporan keuangan: neraca saldo, buku besar, laba rugi, neraca, arus kas (migration 010) |
 | | `FIN-PC` | Kas & Kasbon: pemegang kas site input nota, ajukan isi kas / kasbon (migration 008) |
 | | `FIN-ALL` | Semua menu SmartFin |
@@ -92,7 +94,7 @@ Diatur lewat `paswordTbl`, dengan pola yang sama seperti modul Operational:
 | Author (approval) | `AI` / `AI-014` | Approve invoice, untuk semua proyek atau hanya proyek 014 |
 | | `PJ` / `PJ-014` | Posting jurnal, approve saldo awal / mutasi bank / rekonsiliasi (migration 009), approve invoice klien & penerimaan per proyek (migration 011) |
 | | `AB` | Approve budget/RAB |
-| | `APY` | Approve pembayaran, isi kas site, pengeluaran langsung, kasbon |
+| | `APY` | Approve pembayaran vendor, isi kas site, pengeluaran langsung, kasbon, pembayaran gaji/BPJS/PPh 21 (migration 012) |
 | | `APC` / `APC-014` | Approve nota petty cash & nota kasbon (migration 008) |
 
 Web hanya memanggil fungsi `public.fin_*`. Setiap fungsi mengecek token sesi (8 jam), PIC, dan Author di server, sedangkan tabel `finance` tetap tertutup untuk akses langsung.
@@ -228,3 +230,22 @@ Menu **Piutang Klien (AR)**: diinput PIC `FIN-AR`, disetujui Author `PJ` (atau `
 - **Jurnal invoice**: Dr 1-1300 Piutang Usaha + Dr 1-1310 Piutang Retensi / Cr 4-1000 Pendapatan Kontrak + Cr 2-1500 (PPN dipungut BIMA). Pencairan retensi: Dr 1-1300 / Cr 1-1310.
 - **Penerimaan**: FIN-AR isi uang masuk ke rekening + PPh yang dipotong klien; PJ menyetujui → Dr Bank + Dr PPh / Cr 1-1300. Status invoice otomatis *Dibayar sebagian* / *Lunas*. Penerimaan tidak boleh melebihi sisa piutang (termasuk yang masih menunggu PJ).
 - No. faktur pajak bisa dilengkapi setelah invoice disetujui (buka detail invoice).
+
+### Payroll dari Fusion4 (migration 012)
+
+Menu **Payroll** (PIC `FIN-PR`) membaca hasil *Proses Payroll Bulanan* Fusion4 (`payrollBulananTbl`) per bulan.
+
+1. **Alokasi proyek**: default 100% ke proyek internal sesuai Divisi karyawan (901 Direksi, 902 Business Development, 903 HR, 904 Supply Chains, 905 Operation). Klik **Atur** untuk membagi karyawan ke beberapa proyek, misalnya 60% 014 + 40% 015. Total harus 100%.
+2. **Buat jurnal**: satu jurnal per bulan (tanggal akhir bulan), diringkas per akun & proyek tanpa nama karyawan, masuk DRAFT, lalu diposting PJ di menu Jurnal.
+
+| Baris | Akun |
+|---|---|
+| Karyawan di proyek klien | Dr 5-1300 Beban Tenaga Kerja Proyek (bruto + BPJS perusahaan) |
+| Karyawan di proyek internal | Dr 6-1000 Beban Gaji Overhead (bruto) + Dr 6-1100 Beban BPJS Perusahaan |
+| Uang kompensasi PKWT | Dr 6-1200 |
+| Kewajiban | Cr 2-1300 Hutang BPJS (karyawan + perusahaan), Cr 2-1400 Hutang PPh 21, Cr 2-1200 Hutang Gaji (THP) |
+
+3. Payroll diproses ulang di Fusion4 atau alokasi diubah → **Perbarui jurnal**. Jurnal DRAFT diganti; jurnal yang sudah POSTED dibuatkan jurnal penyesuaian sebesar selisihnya.
+4. **Pembayaran** (setelah jurnal POSTED): FIN-PR klik **Bayar** untuk THP, BPJS, atau PPh 21; APY menyetujui → Dr Hutang Gaji/BPJS/PPh 21 / Cr Bank, langsung POSTED. Tidak boleh melebihi sisa hutang periode itu.
+
+Jurnal ditolak kalau ada potongan gaji di luar BPJS & PPh 21 (belum didukung) atau ada divisi yang tidak punya proyek internal (atur alokasinya dulu).

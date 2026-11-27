@@ -205,6 +205,35 @@
         </div>
       </section>
 
+      <!-- PAYROLL -->
+      <section id="page-payroll" class="page" hidden>
+        <div class="page-head">
+          <div><h1>Payroll</h1><p class="muted">Jurnal gaji dari Proses Payroll Bulanan Fusion4, alokasi biaya ke proyek, dan pembayaran gaji / BPJS / PPh 21. Diinput FIN-PR, jurnal diposting PJ, pembayaran disetujui APY.</p></div>
+          <div class="row-gap">
+            <select id="prPeriod" aria-label="Periode payroll"></select>
+            <button type="button" class="btn ghost" data-refresh="payroll">Muat ulang</button>
+          </div>
+        </div>
+        <div class="kpis" id="prKpis"></div>
+        <div class="card" id="prJournalCard"></div>
+        <div class="grid2">
+          <div class="card panel"><div class="card-head"><div><h2>Biaya per Proyek</h2><p>Gaji bruto + BPJS perusahaan setelah alokasi</p></div></div>
+            <div class="scroll"><table id="prProjTable"></table></div></div>
+          <div class="card panel"><div class="card-head"><div><h2>Rancangan Jurnal</h2><p>Diringkas per akun &amp; proyek, tanpa nama karyawan</p></div></div>
+            <div class="scroll"><table id="prLines"></table></div></div>
+        </div>
+        <div class="card panel">
+          <div class="card-head"><div><h2>Pembayaran Gaji, BPJS &amp; PPh 21</h2><p>Bisa dibayar setelah jurnal payroll diposting PJ</p></div></div>
+          <div class="scroll"><table id="prOwed"></table></div>
+          <div class="scroll"><table id="prPayTable"></table></div>
+        </div>
+        <div class="card panel" id="prEmpCard">
+          <div class="card-head"><div><h2>Karyawan &amp; Alokasi Proyek</h2><p>Default ke proyek internal sesuai divisi. Klik "Atur" untuk membagi ke proyek klien.</p></div>
+            <input id="prSearch" type="search" placeholder="Cari nama / divisi…" style="width:220px"></div>
+          <div class="scroll"><table id="prEmpTable"></table></div>
+        </div>
+      </section>
+
       <!-- KAS & KASBON -->
       <section id="page-kas" class="page" hidden>
         <div class="page-head">

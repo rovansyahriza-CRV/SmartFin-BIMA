@@ -174,6 +174,7 @@ const ICON = {
   aset: 'm21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9',
   laporan: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
   ar: 'M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0c1.1.128 1.907 1.077 1.907 2.185ZM9.75 9h.008v.008H9.75V9Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm4.125 4.5h.008v.008h-.008V13.5Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z',
+  payroll: 'M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z',
   truck: 'M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12',
   scale: 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z',
   trend: 'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
@@ -188,7 +189,8 @@ const NAV = [
     { page: 'bayar', label: 'Pembayaran', pic: 'fin-ap' },
     { page: 'bank', label: 'Bank', pic: 'fin-ap' },
     { page: 'kas', label: 'Kas & Kasbon', pic: 'fin-ap,fin-pc' },
-    { page: 'ar', label: 'Piutang Klien (AR)', pic: 'fin-ar,fin-jv' }] },
+    { page: 'ar', label: 'Piutang Klien (AR)', pic: 'fin-ar,fin-jv' },
+    { page: 'payroll', label: 'Payroll', pic: 'fin-pr,fin-ap' }] },
   { group: 'Pembukuan & Kontrol', items: [
     { page: 'jurnal', label: 'Jurnal', pic: 'fin-jv' },
     { page: 'budget', label: 'Budget vs Actual', pic: 'fin-bva' },
@@ -1474,6 +1476,146 @@ $('page-ar').addEventListener('click', async (ev) => {
   }
 });
 
+// ---------- payroll (Fusion4) ----------
+const PR_KIND = { THP: 'Gaji bersih (THP)', BPJS: 'Setoran BPJS', PPH21: 'Setoran PPh 21' };
+const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+let prSel = null;
+async function loadPayroll() {
+  try {
+    const [y, m] = prSel ? prSel.split('-').map(Number) : [null, null];
+    renderPayroll(await api('fin_payroll_overview', { p_year: y, p_month: m }));
+  } catch (e) { toast(e.message, true); }
+}
+function renderPayroll(d) {
+  cache.payroll = d;
+  if (!d || !d.year) {
+    $('prPeriod').innerHTML = ''; $('prKpis').innerHTML = '';
+    $('prJournalCard').innerHTML = '<p class="muted">Belum ada payroll yang diproses di Fusion4.</p>';
+    return;
+  }
+  prSel = `${d.year}-${d.month}`;
+  const jst = { POSTED: ['ok', 'Terposting'], DRAFT: ['warn', 'Draft, menunggu PJ'], VOID: ['', 'Void'] };
+  $('prPeriod').innerHTML = d.periods.map((p) => opt(`${p.year}-${p.month}`, `${BULAN[p.month - 1]} ${p.year} · ${p.employees} karyawan${p.journal_status ? ' · ' + (jst[p.journal_status] || ['', p.journal_status])[1] : ''}`, `${p.year}-${p.month}` === prSel)).join('');
+  const t = d.totals;
+  const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
+  $('prKpis').innerHTML =
+    kpi('Gaji bruto', rpShort(t.bruto), `${t.employees} karyawan`) +
+    kpi('BPJS perusahaan', rpShort(t.bpjs_perusahaan), 'Beban perusahaan, di luar bruto') +
+    kpi('PPh 21', rpShort(t.pph21), 'Dipotong dari gaji') +
+    kpi('Gaji bersih (THP)', rpShort(t.thp), t.processed_at ? 'Diproses ' + tgl(t.processed_at) : '') +
+    kpi('Total biaya perusahaan', rpShort(num(t.bruto) + num(t.bpjs_perusahaan) + num(t.kompensasi)), num(t.kompensasi) ? `termasuk kompensasi PKWT ${rpShort(t.kompensasi)}` : 'bruto + BPJS perusahaan');
+  const j = d.journal, canPr = hasPic('fin-pr');
+  const [jc, jl] = j ? jst[j.status] || ['', j.status] : ['', 'Belum dibuat'];
+  const btn = canPr ? `<button type="button" class="btn ${j ? 'ghost' : 'primary'}" id="prJournalBtn">${j ? 'Perbarui jurnal' : 'Buat jurnal'}</button>` : '';
+  $('prJournalCard').innerHTML = `<div class="card-head"><div><h2>Jurnal ${BULAN[d.month - 1]} ${d.year}</h2>
+      <p>${j ? `${esc(j.journal_no || 'JV draft #' + j.journal_id)} · dibuat/diperbarui ${esc(j.journaled_by || '')} ${j.journaled_at ? tgl(j.journaled_at) : ''}` : 'Cek alokasi proyek di bawah, lalu buat jurnal. PJ memposting di menu Jurnal.'}</p></div>
+      <div class="row-gap"><span class="badge ${jc}">${esc(jl)}</span>${btn}</div></div>
+    ${j && j.adjust_draft ? '<div class="rpt-note">Ada jurnal penyesuaian (DRAFT) karena payroll atau alokasi berubah setelah jurnal diposting. Minta PJ memposting penyesuaiannya di menu Jurnal.</div>' : ''}
+    ${num(t.other_deduction) ? `<div class="rpt-note">Ada potongan gaji di luar BPJS & PPh 21 (${rp(t.other_deduction)}). Jurnal belum bisa dibuat untuk periode ini.</div>` : ''}
+    <p class="small muted">Payroll diproses ulang di Fusion4 atau alokasi diubah? Tekan "Perbarui jurnal": jurnal DRAFT diganti, jurnal yang sudah POSTED dibuatkan penyesuaian sebesar selisihnya.</p>`;
+  $('prProjTable').innerHTML = '<tr><th>Proyek</th><th>Jenis</th><th class="num">Karyawan</th><th class="num">Biaya</th></tr>' +
+    (d.byProject.length ? d.byProject.map((p) => `<tr><td><span class="code-chip">${esc(p.code || '-')}</span> ${esc(p.name || 'Tanpa proyek')}</td><td>${p.type === 'CLIENT' ? '<span class="badge info">Klien · 5-1300</span>' : '<span class="badge">Internal · 6-1000</span>'}</td><td class="num">${esc(p.employees)}</td><td class="num">${rp(p.cost)}</td></tr>`).join('') : emptyRow(4, 'Tidak ada data'));
+  const td = d.lines.reduce((a, l) => a + num(l.debit), 0), tc = d.lines.reduce((a, l) => a + num(l.credit), 0);
+  $('prLines').innerHTML = '<tr><th>Akun</th><th>Proyek</th><th class="num">Debit</th><th class="num">Kredit</th></tr>' +
+    d.lines.map((l) => `<tr><td>${esc(l.account)} · ${esc(l.account_name || '')}</td><td>${esc(l.project_code || '-')}</td><td class="num">${num(l.debit) ? rp(l.debit) : ''}</td><td class="num">${num(l.credit) ? rp(l.credit) : ''}</td></tr>`).join('') +
+    `<tr class="total"><td colspan="2"><b>Total</b></td><td class="num"><b>${rp(td)}</b></td><td class="num"><b>${rp(tc)}</b></td></tr>`;
+  const posted = j && j.status === 'POSTED';
+  $('prOwed').innerHTML = '<tr><th>Kewajiban</th><th class="num">Hutang</th><th class="num">Sudah dibayar</th><th class="num">Menunggu APY</th><th class="num">Sisa</th><th></th></tr>' +
+    Object.keys(PR_KIND).map((k) => {
+      const o = d.owed[k] || {}, left = num(o.owed) - num(o.paid) - num(o.pending);
+      return `<tr><td>${esc(PR_KIND[k])}</td><td class="num">${rp(o.owed)}</td><td class="num">${rp(o.paid)}</td><td class="num">${num(o.pending) ? rp(o.pending) : '-'}</td>
+        <td class="num ${left > 0 ? '' : 'muted'}">${rp(left)}</td>
+        <td>${canPr && posted && left > 0.004 ? `<button type="button" class="btn primary small" data-pr-pay="${k}">Bayar</button>` : ''}</td></tr>`;
+    }).join('');
+  const apy = hasAuthor('APY');
+  $('prPayTable').innerHTML = d.payments.length ? '<tr><th>Tanggal</th><th>Jenis</th><th>Rekening</th><th class="num">Nilai</th><th>Status</th><th></th></tr>' +
+    d.payments.map((p) => `<tr><td>${tgl(p.pay_date)}</td><td>${esc(PR_KIND[p.kind])}${p.ref_no ? `<div class="small muted">${esc(p.ref_no)}</div>` : ''}</td><td>${esc(p.bank_label)}</td><td class="num">${rp(p.amount)}</td>
+      <td>${p.status === 'APPROVED' ? `<span class="badge ok">Disetujui</span><div class="small muted">${esc(p.approved_by || '')}</div>` : p.status === 'PLANNED' ? `<span class="badge warn">Menunggu APY</span><div class="small muted">oleh ${esc(p.requested_by || '')}</div>` : `<span class="badge">Ditolak</span><div class="small overdue">${esc(p.reject_reason || '')}</div>`}</td>
+      <td><div class="row-gap" style="flex-wrap:nowrap">${p.status === 'PLANNED' && apy ? `<button type="button" class="btn primary small" data-prp-approve="${p.payment_id}">Setujui</button><button type="button" class="btn ghost small" data-prp-reject="${p.payment_id}">Tolak</button>` : ''}</div></td></tr>`).join('') : '';
+  $('prEmpCard').hidden = !d.detail;
+  renderPrEmp();
+}
+function renderPrEmp() {
+  const d = cache.payroll; if (!d || !d.detail) return;
+  const q = $('prSearch').value.trim().toLowerCase();
+  const rows = d.employees.filter((e) => !q || `${e.nama} ${e.divisi} ${e.departemen}`.toLowerCase().includes(q));
+  $('prEmpTable').innerHTML = '<tr><th>Karyawan</th><th>Divisi / departemen</th><th class="num">Bruto</th><th class="num">BPJS perusahaan</th><th>Alokasi proyek</th><th></th></tr>' +
+    (rows.length ? rows.map((e) => `<tr><td><b>${esc(e.nama)}</b><div class="small muted">${esc(e.kontrak || '')}</div></td><td>${esc(e.divisi)}<div class="small muted">${esc(e.departemen || '')}</div></td>
+      <td class="num">${rp(e.bruto)}</td><td class="num">${rp(e.bpjs_perusahaan)}</td>
+      <td>${e.alloc.length ? e.alloc.map((a) => `<span class="code-chip">${esc(a.code)}</span> ${num(a.pct)}%`).join(' · ') : `<span class="code-chip">${esc(e.default_project || '—')}</span> <span class="small muted">100% default</span>`}</td>
+      <td>${hasPic('fin-pr') ? `<button type="button" class="btn ghost small" data-pr-alloc="${e.karyawan_id}">Atur</button>` : ''}</td></tr>`).join('') : emptyRow(6, 'Tidak ada karyawan'));
+}
+$('prSearch').addEventListener('input', renderPrEmp);
+$('prPeriod').addEventListener('change', () => { prSel = $('prPeriod').value; loadPayroll(); });
+
+function prAllocForm(e) {
+  const d = cache.payroll;
+  const projOpts = (sel) => d.projects.map((p) => opt(p.project_id, `${p.code} · ${p.name}${p.type === 'CLIENT' ? ' (klien)' : ''}`, p.project_id === sel)).join('');
+  const row = (a = {}) => `<div class="doc-up pr-al" style="grid-template-columns:minmax(0,2fr) 110px auto"><select class="pa-proj">${projOpts(a.project_id)}</select>
+    <input class="pa-pct" inputmode="decimal" placeholder="%" value="${a.pct ? num(a.pct) : ''}"><button type="button" class="btn ghost small pa-del" aria-label="Hapus">✕</button></div>`;
+  openCash(`Alokasi · ${e.nama}`, `${e.divisi} · bruto ${rp(e.bruto)}. Default: 100% ke proyek ${e.default_project || '-'}. Total harus 100%.`, `<div id="paWrap">
+    <div id="paRows">${(e.alloc.length ? e.alloc : [{}]).map(row).join('')}</div>
+    <div class="row-gap" style="margin-top:8px"><button type="button" class="btn ghost small" id="paAdd">+ Proyek</button><button type="button" class="btn ghost small" id="paReset">Kembali ke default divisi</button></div>
+    <div class="diff-box" id="paSum"></div></div>`, 'Simpan alokasi', async () => {
+    const allocs = [...document.querySelectorAll('#paRows .pr-al')].map((r) => ({ project_id: r.querySelector('.pa-proj').value, pct: Number(r.querySelector('.pa-pct').value.replace(',', '.')) || 0 }));
+    await api('fin_save_payroll_alloc', { p_year: d.year, p_month: d.month, p_karyawan_id: e.karyawan_id, p_allocs: allocs });
+    toast(`Alokasi ${e.nama} tersimpan. Tekan "${d.journal ? 'Perbarui' : 'Buat'} jurnal" supaya jurnalnya ikut berubah.`);
+  });
+  const sum = () => {
+    const s = [...document.querySelectorAll('#paRows .pa-pct')].reduce((a, x) => a + (Number(x.value.replace(',', '.')) || 0), 0);
+    $('paSum').innerHTML = `Total alokasi: <b class="${Math.abs(s - 100) > 0.001 ? 'overdue' : 'rpt-ok'}">${s.toLocaleString('id-ID')}%</b>`;
+  };
+  $('paWrap').addEventListener('input', sum);
+  $('paAdd').addEventListener('click', () => { $('paRows').insertAdjacentHTML('beforeend', row()); sum(); });
+  $('paRows').addEventListener('click', (ev) => { const b = ev.target.closest('.pa-del'); if (b) { b.closest('.pr-al').remove(); sum(); } });
+  $('paReset').addEventListener('click', async () => {
+    try { await api('fin_save_payroll_alloc', { p_year: d.year, p_month: d.month, p_karyawan_id: e.karyawan_id, p_allocs: [] }); $('cashDialog').close(); toast('Alokasi kembali ke default divisi'); loadPayroll(); }
+    catch (err) { $('cashMsg').textContent = err.message; }
+  });
+  sum();
+}
+
+function prPayForm(kind) {
+  const d = cache.payroll, o = d.owed[kind];
+  if (!d.banks.length) { toast('Belum ada rekening bank aktif. Tambahkan di menu Bank.', true); return; }
+  const left = Math.round((num(o.owed) - num(o.paid) - num(o.pending)) * 100) / 100;
+  openCash(`${PR_KIND[kind]} · ${BULAN[d.month - 1]} ${d.year}`, `Sisa ${rp(left)}. Disetujui APY, lalu jurnal bank terposting.`, `
+    <div class="row2"><div><label for="ppBank">Dari rekening</label><select id="ppBank">${d.banks.map((b) => opt(b.bank_id, b.label)).join('')}</select></div>
+      <div><label for="ppDate">Tanggal bayar</label><input type="date" id="ppDate" value="${today()}" max="${today()}" required></div></div>
+    <label for="ppAmt">Nilai (Rp)</label><input id="ppAmt" inputmode="decimal" value="${left.toLocaleString('id-ID')}" required>
+    <label for="ppRef">No. referensi (transfer / NTPN / kode billing)</label><input id="ppRef">`, 'Kirim ke APY', async () => {
+    await api('fin_save_payroll_payment', { p_year: d.year, p_month: d.month, p_kind: kind, p_bank_id: Number($('ppBank').value), p_pay_date: $('ppDate').value, p_amount: parseNum($('ppAmt').value), p_ref_no: fv('ppRef') || null });
+    toast('Pembayaran tersimpan, menunggu persetujuan APY');
+  });
+}
+
+$('page-payroll').addEventListener('click', async (ev) => {
+  const d = cache.payroll; if (!d) return;
+  const t = (attr) => ev.target.closest(`[${attr}]`);
+  let el;
+  if (ev.target.closest('#prJournalBtn')) {
+    const b = $('prJournalBtn'); b.disabled = true;
+    try {
+      const r = await api('fin_payroll_journal', { p_year: d.year, p_month: d.month });
+      toast(r.status === 'POSTED' ? (r.adjust_draft ? 'Jurnal sudah POSTED; jurnal penyesuaian dibuat, minta PJ memposting.' : 'Jurnal sudah POSTED dan tidak ada perubahan.') : 'Jurnal payroll (DRAFT) siap diposting PJ di menu Jurnal');
+      loadPayroll();
+    } catch (e) { toast(e.message, true); b.disabled = false; }
+  } else if ((el = t('data-pr-alloc'))) prAllocForm(d.employees.find((e) => String(e.karyawan_id) === el.dataset.prAlloc));
+  else if ((el = t('data-pr-pay'))) prPayForm(el.dataset.prPay);
+  else if ((el = t('data-prp-approve'))) {
+    const p = d.payments.find((x) => String(x.payment_id) === el.dataset.prpApprove);
+    if (!confirm(`Setujui ${PR_KIND[p.kind].toLowerCase()} ${rp(p.amount)} dari ${p.bank_label}? Jurnal langsung terposting.`)) return;
+    el.disabled = true;
+    try { await api('fin_decide_payroll_payment', { p_payment_id: p.payment_id, p_approve: true, p_reason: null }); toast('Pembayaran disetujui dan terposting'); loadPayroll(); }
+    catch (e) { toast(e.message, true); el.disabled = false; }
+  } else if ((el = t('data-prp-reject'))) {
+    const id = Number(el.dataset.prpReject);
+    openCash('Tolak Pembayaran', '', '<label for="cReason">Alasan penolakan</label><input id="cReason" required>', 'Tolak', async () => {
+      await api('fin_decide_payroll_payment', { p_payment_id: id, p_approve: false, p_reason: fv('cReason') }); toast('Pembayaran ditolak');
+    });
+  }
+});
+
 // ---------- laporan keuangan ----------
 const RPT_TITLE = { TB: 'Neraca Saldo', GL: 'Buku Besar', PL: 'Laba Rugi', BS: 'Neraca', CF: 'Arus Kas' };
 let rptKind = 'TB', rptExportRows = null, rptMeta = null;
@@ -1642,7 +1784,7 @@ $('rptExport').addEventListener('click', async () => {
   } catch (e) { toast(e.message, true); }
 });
 
-const loaders = { ar: loadAR, laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
+const loaders = { payroll: loadPayroll, ar: loadAR, laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
 
 // ---------- start ----------
 (function init() {
