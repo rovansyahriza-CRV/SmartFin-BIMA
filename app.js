@@ -163,23 +163,83 @@ function logout(expired) {
 $('logoutBtn').addEventListener('click', () => logout(false));
 
 // ---------- navigasi ----------
+const ICON = {
+  dashboard: 'M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z',
+  ap: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
+  bayar: 'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z',
+  bank: 'M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z',
+  kas: 'M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z',
+  jurnal: 'M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25',
+  budget: 'M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6ZM13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z',
+  aset: 'm21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9',
+  laporan: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
+  truck: 'M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12',
+  scale: 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z',
+  trend: 'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
+  warn: 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z',
+};
+const svgIcon = (k) => `<svg fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${ICON[k]}"/></svg>`;
+const NAV = [
+  { group: 'Ringkasan', items: [
+    { page: 'dashboard', label: 'Dashboard', pic: 'fin,fin-ap,fin-jv,fin-bva,fin-ast' }] },
+  { group: 'Kas & Hutang', items: [
+    { page: 'ap', label: 'Hutang Vendor (AP)', pic: 'fin-ap' },
+    { page: 'bayar', label: 'Pembayaran', pic: 'fin-ap' },
+    { page: 'bank', label: 'Bank', pic: 'fin-ap' },
+    { page: 'kas', label: 'Kas & Kasbon', pic: 'fin-ap,fin-pc' }] },
+  { group: 'Pembukuan & Kontrol', items: [
+    { page: 'jurnal', label: 'Jurnal', pic: 'fin-jv' },
+    { page: 'budget', label: 'Budget vs Actual', pic: 'fin-bva' },
+    { page: 'aset', label: 'Aset Tetap', pic: 'fin-ast' },
+    { page: 'laporan', label: 'Laporan', pic: 'fin-rpt' }] },
+];
+const navItems = () => NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g.group })));
+const canSee = (page) => { const i = navItems().find((x) => x.page === page); return !!i && hasPic(i.pic); };
+
+function buildNav() {
+  $('nav').innerHTML = NAV.map((g) => {
+    const items = g.items.filter((i) => hasPic(i.pic));
+    if (!items.length) return '';
+    return `<div class="nav-group"><div class="nav-label">${esc(g.group)}</div>` +
+      items.map((i) => `<a href="#${i.page}" data-page="${i.page}">${svgIcon(i.page)}<span>${esc(i.label)}</span><span class="nav-badge" data-badge="${i.page}" hidden></span></a>`).join('') + '</div>';
+  }).join('');
+}
+function setNavBadge(page, n, alert) {
+  const b = document.querySelector(`[data-badge="${page}"]`);
+  if (!b) return;
+  b.hidden = !(num(n) > 0);
+  b.textContent = num(n) > 99 ? '99+' : String(num(n));
+  b.classList.toggle('alert', !!alert);
+}
+
 function startApp() {
   $('loginView').hidden = true;
   $('appView').hidden = false;
+  const role = isSuper() ? 'Admin' : (session.pic.filter((p) => p !== 'fin').map((p) => p.toUpperCase())[0] || 'FIN');
   $('userName').textContent = session.name;
-  document.querySelectorAll('#nav a').forEach((a) => { a.hidden = !hasPic(a.dataset.pic); });
+  $('userRole').textContent = '· ' + role;
+  $('userAvatar').textContent = initials(session.name);
+  $('pmName').textContent = session.name;
+  $('pmCodes').innerHTML = [...session.pic.map((p) => p.toUpperCase()), ...session.author.map((a) => a.toUpperCase())]
+    .map((c) => `<span class="tag-code">${esc(c)}</span>`).join('') || '<span class="muted small">Tanpa kode akses</span>';
+  buildNav();
   $('newInvoiceBtn').hidden = !hasPic('fin-ap');
   go(location.hash.slice(1) || 'dashboard');
 }
 
 function go(page) {
-  const link = document.querySelector(`#nav a[data-page="${page}"]`);
-  if (!link || link.hidden) {
-    const first = document.querySelector('#nav a:not([hidden])');
+  if (!canSee(page)) {
+    const first = document.querySelector('#nav a');
     page = first ? first.dataset.page : 'dashboard';
   }
   document.querySelectorAll('.page').forEach((s) => { s.hidden = s.id !== 'page-' + page; });
-  document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.page === page));
+  document.querySelectorAll('#nav a').forEach((a) => {
+    const on = a.dataset.page === page;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  closeSide();
+  window.scrollTo(0, 0);
   loaders[page]();
 }
 window.addEventListener('hashchange', () => session && go(location.hash.slice(1)));
@@ -188,39 +248,119 @@ document.addEventListener('click', (ev) => {
   if (b) loaders[b.dataset.refresh]();
 });
 
+// sidebar mobile
+const closeSide = () => { $('side').classList.remove('open'); $('sideBackdrop').classList.remove('open'); };
+$('menuBtn').addEventListener('click', () => { $('side').classList.add('open'); $('sideBackdrop').classList.add('open'); });
+$('sideBackdrop').addEventListener('click', closeSide);
+
+// menu profil
+const setProfile = (open) => { $('profileMenu').hidden = !open; $('profile').classList.toggle('open', open); $('profileBtn').setAttribute('aria-expanded', String(open)); };
+$('profileBtn').addEventListener('click', (ev) => { ev.stopPropagation(); setProfile($('profileMenu').hidden); });
+document.addEventListener('click', (ev) => { if (!ev.target.closest('#profile')) setProfile(false); });
+
+// command palette (Ctrl/⌘ + K) — lompat antar menu yang boleh diakses
+let cmdSel = 0;
+function cmdRender() {
+  const q = $('cmdInput').value.trim().toLowerCase();
+  const list = navItems().filter((i) => hasPic(i.pic) && (!q || (i.label + ' ' + i.group + ' ' + i.page).toLowerCase().includes(q)));
+  cmdSel = Math.min(cmdSel, Math.max(list.length - 1, 0));
+  $('cmdList').innerHTML = list.length ? list.map((i, n) => `<button type="button" class="cmd-item${n === cmdSel ? ' sel' : ''}" data-go="${i.page}">${svgIcon(i.page)}${esc(i.label)}<small>${esc(i.group)}</small></button>`).join('')
+    : '<div class="muted small" style="padding:14px">Menu tidak ditemukan.</div>';
+}
+function cmdOpen() { if (!session) return; $('cmdInput').value = ''; cmdSel = 0; cmdRender(); $('cmdDialog').showModal(); $('cmdInput').focus(); }
+function cmdGo(page) { $('cmdDialog').close(); if (location.hash.slice(1) === page) go(page); else location.hash = page; }
+$('cmdBtn').addEventListener('click', cmdOpen);
+$('cmdInput').addEventListener('input', () => { cmdSel = 0; cmdRender(); });
+$('cmdInput').addEventListener('keydown', (ev) => {
+  const items = [...document.querySelectorAll('#cmdList .cmd-item')];
+  if (ev.key === 'ArrowDown') { ev.preventDefault(); cmdSel = (cmdSel + 1) % Math.max(items.length, 1); cmdRender(); }
+  else if (ev.key === 'ArrowUp') { ev.preventDefault(); cmdSel = (cmdSel - 1 + items.length) % Math.max(items.length, 1); cmdRender(); }
+  else if (ev.key === 'Enter' && items[cmdSel]) { ev.preventDefault(); cmdGo(items[cmdSel].dataset.go); }
+});
+$('cmdList').addEventListener('click', (ev) => { const b = ev.target.closest('[data-go]'); if (b) cmdGo(b.dataset.go); });
+$('cmdDialog').addEventListener('click', (ev) => { if (ev.target === $('cmdDialog')) $('cmdDialog').close(); });
+document.addEventListener('keydown', (ev) => {
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'k') { ev.preventDefault(); cmdOpen(); }
+});
+
 // ---------- dashboard ----------
+let bvaUnit = 'jt';
+const money = (v) => bvaUnit === 'jt' ? rpShort(v) : rp(v);
 async function loadDashboard() {
   try {
     const d = await api('fin_dashboard');
     cache.dashboard = d;
     const k = d.kpi;
-    $('dashTime').textContent = 'Diperbarui ' + new Date(d.generatedAt).toLocaleString('id-ID');
-    const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
+    $('dashTime').textContent = 'Data live · diperbarui ' + new Date(d.generatedAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+    const kpi = (icon, label, val, sub, pill) => `<div class="kpi2"><div class="k-top"><div class="k-label">${esc(label)}</div><span class="k-ic">${svgIcon(icon)}</span></div>
+      <div class="k-val">${esc(val)}</div><div class="k-sub">${pill || esc(sub)}</div></div>`;
+    const pill = (cls, t) => `<span class="pill ${cls}">${esc(t)}</span>`;
     $('kpis').innerHTML =
-      kpi('Hutang belum ditagih vendor', rpShort(k.hutangBelumDitagih), 'Barang sudah diterima, invoice belum masuk') +
-      kpi('Hutang usaha (invoice approved)', rpShort(k.hutangUsaha), `Jatuh tempo ≤ 7 hari: ${rpShort(k.jatuhTempo7Hari)}`, num(k.jatuhTempo7Hari) > 0) +
-      kpi('Pembayaran', rpShort(k.siapDibayar || 0), `Siap dibayar · ${k.menungguApproval || 0} menunggu approval APY`, (k.menungguApproval || 0) > 0) +
-      kpi('Komitmen PO vs Budget', rpShort(k.komitmenTotal), num(k.budgetTotal) > 0 ? `Budget ${rpShort(k.budgetTotal)}` : 'RAB belum diinput', num(k.budgetTotal) === 0) +
-      kpi('Realisasi biaya proyek', rpShort(k.realisasiTotal), 'Material diserahkan ke end user') +
-      kpi('Jurnal draft', String(k.jurnalDraft), k.errorJurnal > 0 ? `${k.errorJurnal} error jurnal otomatis` : 'Menunggu posting (PJ)', k.errorJurnal > 0) +
-      kpi('Aset perlu dilengkapi', String(k.asetPerluDilengkapi), 'Isi kategori & umur di menu Aset', k.asetPerluDilengkapi > 0);
+      kpi('truck', 'Hutang belum ditagih vendor', rpShort(k.hutangBelumDitagih), 'Barang sudah diterima, invoice belum masuk') +
+      kpi('scale', 'Hutang usaha (invoice approved)', rpShort(k.hutangUsaha), '',
+        num(k.jatuhTempo7Hari) > 0 ? pill('warn', `Jatuh tempo ≤ 7 hari: ${rpShort(k.jatuhTempo7Hari)}`) : pill('ok', 'Tidak ada jatuh tempo ≤ 7 hari')) +
+      kpi('bayar', 'Pembayaran siap dibayar', rpShort(k.siapDibayar || 0), '',
+        (k.menungguApproval || 0) > 0 ? pill('warn', `${k.menungguApproval} menunggu approval APY`) : pill('ok', 'Tidak ada antrean approval')) +
+      kpi('trend', 'Realisasi biaya proyek', rpShort(k.realisasiTotal), 'Material diserahkan ke end user');
 
-    $('dashBva').innerHTML = '<tr><th>Proyek</th><th class="num">Budget</th><th class="num">Komitmen</th><th class="num">Realisasi</th><th>Terpakai</th></tr>' +
-      (d.budgetVsActual.length ? d.budgetVsActual.map((b) => bvaRow(b)).join('') : emptyRow(5, 'Belum ada data'));
+    const act = (cls, icon, label, val, linkText, page) => {
+      const can = canSee(page);
+      const tag = can ? `a href="#${page}"` : 'div';
+      return `<${tag} class="act ${cls}"><div><div class="a-label">${esc(label)}</div><div class="a-main"><span class="a-val">${esc(val)}</span>${can ? `<span class="a-link">${esc(linkText)} →</span>` : ''}</div></div><span class="a-ic">${svgIcon(icon)}</span></${can ? 'a' : 'div'}>`;
+    };
+    const noBudget = num(k.budgetTotal) === 0;
+    $('dashActions').innerHTML =
+      act(noBudget ? 'amber' : 'calm', 'budget', 'Komitmen PO vs Budget', rpShort(k.komitmenTotal), noBudget ? 'RAB belum diinput' : `dari budget ${rpShort(k.budgetTotal)}`, 'budget') +
+      act(k.errorJurnal > 0 ? 'rose' : 'calm', 'jurnal', 'Jurnal draft', `${k.jurnalDraft} jurnal`, k.errorJurnal > 0 ? `${k.errorJurnal} error jurnal otomatis` : 'Review & posting (PJ)', 'jurnal') +
+      act(k.asetPerluDilengkapi > 0 ? 'rose' : 'calm', 'aset', 'Aset perlu dilengkapi', `${k.asetPerluDilengkapi} aset`, k.asetPerluDilengkapi > 0 ? 'Isi kategori & umur' : 'Semua lengkap', 'aset');
+    setNavBadge('jurnal', k.jurnalDraft, k.errorJurnal > 0);
+    setNavBadge('aset', k.asetPerluDilengkapi, true);
 
+    renderDashBva();
+
+    const dj = d.draftJournals || [];
+    const srcCls = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9_]/g, '');
     $('dashDraft').innerHTML = '<tr><th>Tanggal</th><th>Sumber</th><th>Keterangan</th><th class="num">Nilai</th></tr>' +
-      (d.draftJournals.length ? d.draftJournals.map((j) => `<tr><td>${tgl(j.journal_date)}</td><td><span class="badge src">${esc(j.source_system)}</span></td><td>${esc(j.description)}</td><td class="num">${rp(j.amount)}</td></tr>`).join('') : emptyRow(4, 'Tidak ada jurnal draft'));
+      (dj.length ? dj.map((j) => `<tr class="jrow" data-dj="${esc(j.journal_id)}" tabindex="0"><td style="white-space:nowrap">${tgl(j.journal_date)}</td><td><span class="src-badge ${srcCls(j.source_system)}">${esc(j.source_system)}</span></td><td>${esc(j.description)}<div class="j-ref">JV-DRAFT #${esc(j.journal_id)}</div></td><td class="num"><b>${rp(j.amount)}</b></td></tr>`).join('') : emptyRow(4, 'Tidak ada jurnal draft'));
 
     const up = d.upcomingPayments || [];
     $('dashPay').innerHTML = '<tr><th>Jatuh tempo</th><th>Vendor / PO</th><th class="num">Nilai</th><th>Status</th></tr>' +
-      (up.length ? up.map((p) => `<tr><td>${dueCell(p)}</td><td>${esc(p.vendor_name)}<div class="small muted">${esc(p.po_number)}</div></td><td class="num">${rp(p.amount)}</td><td>${payBadge(p.status)}</td></tr>`).join('') : emptyRow(4, 'Tidak ada pembayaran terjadwal'));
+      (up.length ? up.map((p) => `<tr><td>${dueCell(p)}</td><td>${esc(p.vendor_name)}<div class="j-ref">${esc(p.po_number)}</div></td><td class="num">${rp(p.amount)}</td><td>${payBadge(p.status)}</td></tr>`).join('') : emptyRow(4, 'Tidak ada pembayaran terjadwal'));
 
     const m = d.matchSummary || {};
     $('dashMatch').innerHTML = Object.keys(m).length
-      ? Object.entries(m).map(([s, n]) => `${statusBadge(s)} <b>${esc(n)}</b>`).join(' &nbsp; ')
+      ? Object.entries(m).map(([s, n]) => `<span class="row-gap" style="gap:6px">${statusBadge(s)} <b>${esc(n)}</b></span>`).join('')
       : '<span class="muted">Belum ada PO</span>';
   } catch (e) { toast(e.message, true); }
 }
+
+function renderDashBva() {
+  const d = cache.dashboard;
+  if (!d) return;
+  const rows = d.budgetVsActual || [];
+  const canBudget = canSee('budget');
+  $('dashBva').innerHTML = '<tr><th>Proyek</th><th class="num">Budget</th><th class="num">Komitmen</th><th class="num">Realisasi</th><th>Terpakai</th></tr>' +
+    (rows.length ? rows.map((b) => {
+      const budget = num(b.budget_amount), actual = num(b.actual_amount);
+      const pct = budget > 0 ? Math.round(actual / budget * 100) : null;
+      const used = pct === null
+        ? (canBudget ? '<a href="#budget" class="btn-rab">+ Input RAB</a>' : '<span class="muted small">RAB belum ada</span>')
+        : `<div class="row-gap" style="flex-wrap:nowrap"><div class="bar${pct > 85 ? ' over' : ''}" style="flex:1"><div style="width:${Math.min(pct, 100)}%"></div></div><b class="small">${pct}%</b></div>`;
+      return `<tr><td><div class="proj-cell"><span class="code-chip">${esc(b.code)}</span><span>${esc(b.name)}</span></div></td><td class="num">${budget ? money(budget) : '<span class="muted">—</span>'}</td><td class="num">${money(b.committed_amount)}</td><td class="num">${money(actual)}</td><td style="min-width:130px">${used}</td></tr>`;
+    }).join('') : emptyRow(5, 'Belum ada data'));
+  const t = rows.reduce((a, b) => ({ bud: a.bud + num(b.budget_amount), com: a.com + num(b.committed_amount), act: a.act + num(b.actual_amount) }), { bud: 0, com: 0, act: 0 });
+  $('dashBvaFoot').textContent = rows.length ? `${rows.length} proyek · Budget ${money(t.bud)} · Komitmen ${money(t.com)} · Realisasi ${money(t.act)}` : '';
+}
+$('bvaSeg').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-unit]');
+  if (!b) return;
+  bvaUnit = b.dataset.unit;
+  document.querySelectorAll('#bvaSeg button').forEach((x) => x.classList.toggle('on', x === b));
+  renderDashBva();
+});
+const openDraft = (id) => canSee('laporan') ? openJournalDetail(id) : (location.hash = 'jurnal');
+$('dashDraft').addEventListener('click', (ev) => { const r = ev.target.closest('[data-dj]'); if (r) openDraft(Number(r.dataset.dj)); });
+$('dashDraft').addEventListener('keydown', (ev) => { const r = ev.target.closest('[data-dj]'); if (r && ev.key === 'Enter') openDraft(Number(r.dataset.dj)); });
 
 function bvaRow(b) {
   const budget = num(b.budget_amount), actual = num(b.actual_amount);
@@ -1242,9 +1382,11 @@ $('rptBody').addEventListener('click', async (ev) => {
   const g = ev.target.closest('[data-gl]');
   if (g) { setRptTab('GL'); runReport(g.dataset.gl); return; }
   const j = ev.target.closest('[data-jrn]');
-  if (!j) return;
+  if (j) openJournalDetail(Number(j.dataset.jrn));
+});
+async function openJournalDetail(id) {
   try {
-    const r = await api('fin_report', { p_report: 'JOURNAL', p_from: null, p_to: null, p_project_id: null, p_account: null, p_include_draft: true, p_journal_id: Number(j.dataset.jrn) });
+    const r = await api('fin_report', { p_report: 'JOURNAL', p_from: null, p_to: null, p_project_id: null, p_account: null, p_include_draft: true, p_journal_id: id });
     const x = r.data;
     const td = x.lines.reduce((t, l) => t + num(l.debit), 0), tc = x.lines.reduce((t, l) => t + num(l.credit), 0);
     openCash(x.journal_no || 'Jurnal DRAFT #' + x.journal_id, `${tgl(x.journal_date)} · ${x.source_system} · ${x.status === 'POSTED' ? 'diposting ' + (x.posted_by || '') : 'DRAFT, belum diposting'}`,
@@ -1252,7 +1394,7 @@ $('rptBody').addEventListener('click', async (ev) => {
       + x.lines.map((l) => `<tr><td>${esc(l.account_code)} · ${esc(l.account_name || '')}${l.memo ? `<div class="small muted">${esc(l.memo)}</div>` : ''}</td><td>${esc(l.project_code || '-')}</td><td class="num">${num(l.debit) ? rp(l.debit) : ''}</td><td class="num">${num(l.credit) ? rp(l.credit) : ''}</td></tr>`).join('')
       + `<tr class="total"><td colspan="2">Total</td><td class="num">${rp(td)}</td><td class="num">${rp(tc)}</td></tr></table></div>`, null, null);
   } catch (e) { toast(e.message, true); }
-});
+}
 let xlsxLoading = null;
 const loadXlsx = () => xlsxLoading || (xlsxLoading = new Promise((res, rej) => {
   const s = document.createElement('script');

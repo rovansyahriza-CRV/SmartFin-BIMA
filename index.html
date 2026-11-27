@@ -6,7 +6,7 @@
 <title>SmartFin BIMA</title>
 <link rel="icon" href="logo-bima.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -56,30 +56,38 @@
 <!-- ============ APP ============ -->
 <div id="appView" hidden>
   <header class="topbar">
-    <div class="brand">
-      <img src="logo-bima.png" alt="Logo BIMA — Bilal Mitra Aryatama">
-      <div><div class="brand-title">SmartFin</div><div class="brand-sub">Smart Financial System · Bilal Mitra Aryatama</div></div>
+    <div class="row-gap" style="gap:10px;flex-wrap:nowrap;min-width:0">
+      <button type="button" class="menu-btn" id="menuBtn" aria-label="Buka menu"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg></button>
+      <a href="#dashboard" class="brand">
+        <span class="brand-logo"><img src="logo-bima.png" alt="Logo BIMA — Bilal Mitra Aryatama"></span>
+        <span><span class="brand-title">SmartFin</span><span class="brand-sub">Smart Financial System · Bilal Mitra Aryatama</span></span>
+      </a>
     </div>
-    <div class="user-box">
-      <span id="userName"></span>
-      <button type="button" class="btn ghost small" id="logoutBtn">Keluar</button>
+    <div class="top-right">
+      <button type="button" class="search-trigger" id="cmdBtn" aria-label="Cari menu">
+        <span><svg fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><span class="st-text">Cari menu…</span></span><kbd>Ctrl K</kbd>
+      </button>
+      <div class="top-div"></div>
+      <div class="profile" id="profile">
+        <button type="button" class="profile-pill" id="profileBtn" aria-haspopup="menu" aria-expanded="false">
+          <span class="avatar" id="userAvatar"></span>
+          <span class="p-name"><b id="userName" style="font-weight:600"></b> <span class="role" id="userRole"></span></span>
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" hidden>
+          <div class="pm-head"><b id="pmName"></b><span>Bilal Mitra Aryatama</span></div>
+          <div class="pm-codes" id="pmCodes"></div>
+          <button type="button" id="logoutBtn" role="menuitem"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>Keluar</button>
+        </div>
+      </div>
     </div>
   </header>
 
   <div class="layout">
-    <aside class="side">
-      <nav id="nav">
-        <a href="#dashboard" data-page="dashboard" data-pic="fin,fin-ap,fin-jv,fin-bva,fin-ast">Dashboard</a>
-        <a href="#ap" data-page="ap" data-pic="fin-ap">Hutang Vendor (AP)</a>
-        <a href="#bayar" data-page="bayar" data-pic="fin-ap">Pembayaran</a>
-        <a href="#bank" data-page="bank" data-pic="fin-ap">Bank</a>
-        <a href="#kas" data-page="kas" data-pic="fin-ap,fin-pc">Kas &amp; Kasbon</a>
-        <a href="#jurnal" data-page="jurnal" data-pic="fin-jv">Jurnal</a>
-        <a href="#laporan" data-page="laporan" data-pic="fin-rpt">Laporan</a>
-        <a href="#budget" data-page="budget" data-pic="fin-bva">Budget vs Actual</a>
-        <a href="#aset" data-page="aset" data-pic="fin-ast">Aset Tetap</a>
-      </nav>
-      <div class="side-foot">Terhubung ke<br><b>SMMS · Fusion4 SmartGate</b></div>
+    <div class="side-backdrop" id="sideBackdrop"></div>
+    <aside class="side" id="side">
+      <nav id="nav"></nav>
+      <div class="side-foot"><span class="dot"></span><div><small>Terhubung ke</small><b>SMMS · Fusion4 SmartGate</b></div></div>
     </aside>
 
     <main id="main">
@@ -87,21 +95,27 @@
       <!-- DASHBOARD -->
       <section id="page-dashboard" class="page">
         <div class="page-head">
-          <div><h1>Dashboard Keuangan</h1><p class="muted" id="dashTime"></p></div>
+          <div><h1>Dashboard Keuangan</h1><div class="live" id="dashTime"></div></div>
           <button type="button" class="btn ghost" data-refresh="dashboard">Muat ulang</button>
         </div>
         <div class="kpis" id="kpis"></div>
+        <div class="actions3" id="dashActions"></div>
         <div class="grid2">
-          <div class="card"><div class="card-head"><h2>Budget vs Actual per Proyek</h2></div>
+          <div class="card panel">
+            <div class="card-head"><div><h2>Budget vs Actual per Proyek</h2><p>Komitmen = PO terbit · Realisasi = material diserahkan ke end user</p></div>
+              <div class="seg" id="bvaSeg"><button type="button" data-unit="jt" class="on">Ringkas (jt)</button><button type="button" data-unit="rp">Penuh (Rp)</button></div></div>
             <div class="scroll"><table id="dashBva"></table></div>
-            <p class="muted small">Komitmen = nilai PO terbit. Realisasi = material yang sudah diserahkan ke end user.</p></div>
-          <div class="card"><div class="card-head"><h2>Jurnal Draft Terbaru</h2><a href="#jurnal">Lihat semua</a></div>
-            <div class="scroll"><table id="dashDraft"></table></div></div>
+            <div class="panel-foot" id="dashBvaFoot"></div>
+          </div>
+          <div class="card panel">
+            <div class="card-head"><div><h2>Jurnal Draft Terbaru</h2><p>Menunggu review &amp; posting</p></div><a href="#jurnal">Lihat semua →</a></div>
+            <div class="scroll"><table id="dashDraft"></table></div>
+          </div>
         </div>
         <div class="grid2">
-          <div class="card"><div class="card-head"><h2>Pembayaran Mendatang</h2><a href="#bayar">Buka Pembayaran</a></div>
+          <div class="card panel"><div class="card-head"><div><h2>Pembayaran Mendatang</h2><p>Jadwal bayar vendor terdekat</p></div><a href="#bayar">Buka Pembayaran →</a></div>
             <div class="scroll"><table id="dashPay"></table></div></div>
-          <div class="card"><div class="card-head"><h2>Status 3-Way Match (baris PO)</h2></div><div id="dashMatch" class="chips"></div></div>
+          <div class="card panel"><div class="card-head"><div><h2>Status 3-Way Match</h2><p>Baris PO · PO ↔ penerimaan ↔ invoice</p></div></div><div id="dashMatch" class="chips" style="padding:18px 20px"></div></div>
         </div>
       </section>
 
@@ -371,6 +385,11 @@
   </div>
 </dialog>
 
+<dialog id="cmdDialog" class="cmd" aria-label="Cari menu">
+  <div class="cmd-input"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg><input id="cmdInput" type="text" placeholder="Ketik nama menu… (mis. bank, laporan)" autocomplete="off"></div>
+  <div class="cmd-list" id="cmdList"></div>
+  <div class="cmd-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> pilih</span><span><kbd>Enter</kbd> buka</span><span><kbd>Esc</kbd> tutup</span></div>
+</dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="app.js"></script>
