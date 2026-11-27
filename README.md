@@ -22,6 +22,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/003_fixed_asset.sql` | Register aset tetap per unit (otomatis dari SMMS) + penyusutan bulanan | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/004_auth_api.sql` | Login SmartFin (PIC = menu, Author = approval) + API `fin_*` untuk halaman web | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/005_payment.sql` | Rekening bank, termin vendor, jadwal & approval pembayaran (APY), biaya tambahan invoice | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/006_documents.sql` | Checklist & upload dokumen invoice (Gate A uang muka, Gate B invoice), invoice HOLD kalau dokumen belum lengkap | ⏳ Belum dijalankan |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -113,3 +114,36 @@ Menu yang muncul mengikuti PIC akun. Tombol approval (Posting, Approve) hanya mu
 - Rekening bank dikelola di halaman Pembayaran. Tiap rekening otomatis mendapat sub-akun COA `1-12xx`.
 - Invoice bisa memuat **biaya mobilisasi / jasa lain**. Biaya ini langsung jadi beban 5-1200, dan totalnya tidak boleh melebihi penawaran vendor di RFQ.
 - Perbaikan: `ALL` di kolom PIC sekarang juga memberi semua level approval (super admin).
+
+### Dokumen invoice & uang muka (migration 006)
+
+Checklist dokumen dipilih otomatis dari termin dan jenis PO/SO. Dokumen dari SMMS dicentang sendiri, sisanya diupload ke Google Drive lewat bridge Apps Script yang sama dengan SMMS.
+
+**Gate A – sebelum uang muka disetujui (APY)**
+
+| Dokumen | Status |
+|---|---|
+| PO / SO approved | Otomatis dari SMMS |
+| Invoice DP / Proforma vendor | Wajib |
+| Jaminan Uang Muka (penerbit, nomor, nilai, berlaku s/d) | Wajib (bisa dimatikan lewat setting `dp_bond_required`) |
+| Faktur Pajak DP | Opsional |
+| Kwitansi | Opsional |
+
+Serah terima belum diminta di tahap uang muka.
+
+**Gate B – sebelum invoice di-approve (AI)**
+
+| Dokumen | Status |
+|---|---|
+| PO / SO approved | Otomatis dari SMMS |
+| Surat jalan vendor | Otomatis dari SMMS (khusus PO) |
+| Bukti terima site | Otomatis dari SMMS (khusus PO) |
+| Invoice asli vendor | Wajib |
+| Faktur Pajak | Wajib kalau ada PPN |
+| Timesheet / Laporan pekerjaan | Wajib untuk SO |
+| Kwitansi | Opsional |
+
+- Dokumen wajib belum lengkap: invoice berstatus **HOLD**, dan uang muka tidak bisa disetujui. Begitu lengkap, status pindah sendiri ke MATCHED.
+- Dokumen tidak bisa dihapus setelah invoice / uang muka disetujui.
+- File maksimal 10 MB. Bridge Drive (Apps Script "BIMA Drive Bridge") menyimpan dokumen di `SMMS-BIMA-Files/finance/yyyy-MM` **tanpa** link publik, jadi hanya akun yang diberi akses ke folder `finance` yang bisa membuka file.
+

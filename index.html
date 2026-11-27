@@ -215,6 +215,10 @@
         <div><label for="iOth">Biaya jasa lain (Rp)</label><input id="iOth" inputmode="numeric" value="0"></div>
       </div>
     </div>
+    <div class="doc-box">
+      <div class="doc-box-head"><b>Lampiran dokumen</b><span class="small muted">PO/SO, surat jalan &amp; bukti terima otomatis diambil dari SMMS</span></div>
+      <div id="iDocs"></div>
+    </div>
     <div class="row2">
       <div><label class="check"><input type="checkbox" id="iPpn"> PPN 11%</label></div>
       <div><label for="iPph">PPh 23 (Rp, untuk jasa)</label><input id="iPph" inputmode="numeric" value="0"></div>
@@ -268,6 +272,16 @@
       <button type="submit" class="btn primary" value="save">Simpan Pembayaran</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="docDialog">
+  <div class="dlg">
+    <h2 id="docTitle">Checklist Dokumen</h2>
+    <p class="muted small" id="docInfo"></p>
+    <div id="docList"></div>
+    <p id="docMsg" class="error-text" role="alert"></p>
+    <div class="dialog-actions"><button type="button" class="btn ghost" id="docClose">Tutup</button></div>
+  </div>
 </dialog>
 
 <div id="toast" role="status" aria-live="polite"></div>

@@ -7,6 +7,12 @@
 const SUPABASE_URL = 'https://nhmpwjriextmbotmvvbu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_XNqLw7iz873TtrLn9ag8dQ_AkL2rImz';
 const SESSION_KEY = 'smartfin_session';
+// Drive bridge yang sama dengan SMMS / Fusion4 (Apps Script). Dokumen keuangan masuk kategori "finance";
+// bridge menyimpan kategori "finance" di SMMS-BIMA-Files/finance/yyyy-MM, file tidak dibagikan publik.
+const DRIVE_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbwfq5bqNWx0fO9LuEyQasUzkLP91gA8G-rqRKpPOIJ9r7WNN0G_klH8jXxXhY96ArlC/exec';
+const DRIVE_BRIDGE_TOKEN = 'bima-2026-x8f2k9';
+const DRIVE_CATEGORY = 'finance';
+const MAX_UPLOAD_MB = 10;
 
 let session = null;          // {token, id, name, pic[], author[], expiresAt}
 const cache = {};            // data terakhir per halaman
@@ -262,7 +268,8 @@ async function loadAP() {
         const canApprove = i.status === 'MATCHED' && hasAnyAuthor('AI');
         return `<tr><td><b>${esc(i.invoice_no)}</b></td><td>${esc(i.vendor_name)}<br><span class="muted">${esc(i.po_number)}</span></td><td>${tgl(i.invoice_date)}</td><td>${tgl(i.due_date)}</td><td class="num">${rp(i.total_amount)}</td>
           <td>${statusBadge(i.status)}${i.hold_reason ? `<div class="small muted">${esc(i.hold_reason)}</div>` : ''}${i.approved_by ? `<div class="small muted">oleh ${esc(i.approved_by)}</div>` : ''}</td>
-          <td>${canApprove ? `<button type="button" class="btn primary small" data-approve-inv="${esc(i.invoice_id)}">Approve</button>` : ''}</td></tr>`;
+          <td><div class="row-gap"><button type="button" class="btn ghost small" data-docs-inv="${esc(i.invoice_id)}" data-title="${esc(i.invoice_no + ' · ' + i.vendor_name + ' · ' + i.po_number)}">Dokumen${i.docs_missing ? ' !' : ' ✓'}</button>
+          ${canApprove ? `<button type="button" class="btn primary small" data-approve-inv="${esc(i.invoice_id)}">Approve</button>` : ''}</div></td></tr>`;
       }).join('') : emptyRow(7, 'Belum ada invoice'));
 
     $('poTable').innerHTML = '<tr><th>PO</th><th>Vendor</th><th>Proyek</th><th>Item</th><th class="num">Qty PO</th><th class="num">Diterima</th><th class="num">Ditagih</th><th class="num">Harga</th><th>Status</th></tr>' +
@@ -271,6 +278,8 @@ async function loadAP() {
   } catch (e) { toast(e.message, true); }
 }
 $('invTable').addEventListener('click', async (ev) => {
+  const dd = ev.target.closest('[data-docs-inv]');
+  if (dd) { openDocs('INVOICE', Number(dd.dataset.docsInv), dd.dataset.title); return; }
   const b = ev.target.closest('[data-approve-inv]');
   if (!b) return;
   if (!confirm('Approve invoice ini? Hutang usaha akan diakui dan jurnalnya dibuat otomatis.')) return;
@@ -306,6 +315,7 @@ function renderInvoiceLines() {
   const capMob = t ? num(t.mobilisasi_cost) : 0, capOth = t ? num(t.other_service_cost) : 0;
   $('iChargeBox').hidden = !(capMob + capOth > 0);
   $('iMob').value = '0'; $('iOth').value = '0';
+  renderInvoiceDocInputs(poId);
   $('iTermInfo').textContent = t ? `Termin: ${t.term_text || '-'} · Penawaran vendor: mobilisasi ${rp(capMob)}, jasa lain ${rp(capOth)} · sudah ditagih ${rp(t.charges_invoiced)}` : '';
   const lines = cache.ap.poLines.filter((l) => l.po_id === poId);
   $('iLines').innerHTML = '<tr><th>Item</th><th class="num">Diterima</th><th class="num">Sudah ditagih</th><th>Qty invoice</th><th>Harga satuan</th></tr>' +
@@ -322,6 +332,19 @@ function invoiceLines() {
     qty: parseNum(tr.querySelector('.iq').value),
     unit_price: parseNum(tr.querySelector('.ip').value)
   })).filter((l) => l.qty > 0);
+}
+function renderInvoiceDocInputs(poId) {
+  const line = cache.ap.poLines.find((l) => l.po_id === poId);
+  const isSo = line && String(line.doc_type || '').toUpperCase() === 'SO';
+  const types = (cache.ap.docTypes || []).filter((d) => d.gate === 'INVOICE' && d.source === 'UPLOAD');
+  $('iDocs').innerHTML = types.map((d) => {
+    const req = d.rule === 'ALWAYS' || (d.rule === 'IF_SO' && isSo) || d.rule === 'IF_PPN';
+    if (d.rule === 'IF_SO' && !isSo) return '';
+    const tag = d.rule === 'IF_PPN' ? '<span class="badge">Wajib jika PPN</span>' : req ? '<span class="badge warn">Wajib</span>' : '<span class="badge">Opsional</span>';
+    return `<div class="doc-up" data-inv-doc="${esc(d.doc_type)}"><div><div class="row-gap small"><b>${esc(d.doc_name)}</b>${tag}</div>
+      <input type="file" accept=".pdf,image/*" aria-label="File ${esc(d.doc_name)}"></div>
+      <input type="text" class="ref" placeholder="No. dokumen (opsional)" aria-label="Nomor ${esc(d.doc_name)}"><span></span></div>`;
+  }).join('');
 }
 function chargeLines() {
   const out = [];
@@ -352,12 +375,113 @@ $('invForm').addEventListener('submit', async (ev) => {
       p_due_date: $('iDue').value || null, p_ppn_amount: $('iPpn').checked ? Math.round(sub * 0.11) : 0,
       p_pph23_amount: parseNum($('iPph').value), p_faktur_pajak_no: $('iFaktur').value.trim() || null, p_notes: null, p_lines: lines
     });
+    // upload lampiran yang dipilih
+    const pending = [...$('iDocs').querySelectorAll('[data-inv-doc]')].filter((row) => row.querySelector('input[type=file]').files[0]);
+    let last = r, failed = [];
+    for (const row of pending) {
+      $('invMsg').textContent = `Mengunggah ${row.dataset.invDoc.replace('INV_', '').toLowerCase()}…`;
+      try { last = await attachDocument('INVOICE', r.invoice_id, row.dataset.invDoc, row.querySelector('input[type=file]').files[0], row.querySelector('.ref').value); }
+      catch (e) { failed.push(e.message); }
+    }
     $('invDialog').close();
-    toast(r.status === 'MATCHED' ? 'Invoice tersimpan: cocok dengan PO & penerimaan (siap di-approve)' : 'Invoice tersimpan dengan status HOLD: ' + (r.hold_reason || 'ada selisih'), r.status !== 'MATCHED');
+    const status = last.invoice_status || r.status;
+    if (failed.length) toast('Invoice tersimpan, tapi ada upload gagal: ' + failed.join('; '), true);
+    else toast(status === 'MATCHED' ? 'Invoice tersimpan, dokumen lengkap & cocok (siap di-approve)' : 'Invoice tersimpan dengan status HOLD. ' + (last.missing ? 'Kurang: ' + last.missing : (r.hold_reason || '')), status !== 'MATCHED');
     loadAP();
   } catch (e) { $('invMsg').textContent = e.message; }
 });
 
+
+
+// ---------- upload dokumen ----------
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+async function uploadToDrive(file, prefix) {
+  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new Error(`File ${file.name} melebihi ${MAX_UPLOAD_MB} MB`);
+  const base64Data = await fileToBase64(file);
+  const safeName = `${prefix}_${Date.now()}_${file.name}`.replace(/[^A-Za-z0-9._-]+/g, '_');
+  const send = async (category) => {
+    const res = await fetch(DRIVE_BRIDGE_URL, { method: 'POST', body: JSON.stringify({
+      token: DRIVE_BRIDGE_TOKEN, action: 'upload', category, fileName: safeName, mimeType: file.type || 'application/octet-stream', base64Data }) });
+    return res.json();
+  };
+  let data = await send(DRIVE_CATEGORY);
+  if (!data || data.error) throw new Error('Upload gagal: ' + ((data && data.error) || 'tidak ada respons'));
+  return { url: data.viewUrl || data.directUrl, fileId: data.fileId, fileName: file.name };
+}
+async function attachDocument(gate, refId, docType, file, refNo, bond) {
+  const up = await uploadToDrive(file, docType);
+  return api('fin_add_document', { p_gate: gate, p_ref_id: refId, p_doc_type: docType, p_file_url: up.url, p_file_id: up.fileId,
+    p_file_name: up.fileName, p_ref_no: refNo || null, p_bond_issuer: bond ? bond.issuer : null,
+    p_bond_amount: bond ? bond.amount : null, p_bond_expiry: bond ? bond.expiry : null, p_notes: null });
+}
+
+// ---------- dialog checklist dokumen ----------
+let docCtx = null;
+async function openDocs(gate, refId, title) {
+  docCtx = { gate, refId, title };
+  $('docTitle').textContent = gate === 'ADVANCE' ? 'Dokumen Uang Muka (Gate A)' : 'Dokumen Invoice (Gate B)';
+  $('docInfo').textContent = title;
+  $('docMsg').textContent = '';
+  $('docList').innerHTML = '<p class="muted">Memuat…</p>';
+  if (!$('docDialog').open) $('docDialog').showModal();
+  try {
+    const d = await api('fin_doc_checklist', { p_gate: gate, p_ref_id: refId });
+    $('docList').innerHTML = d.items.map((it) => {
+      const ic = it.ok ? '<span class="doc-ic ok">✓</span>' : it.required ? '<span class="doc-ic no">!</span>' : '<span class="doc-ic opt">–</span>';
+      const chips = (it.items || []).map((x) => {
+        const label = esc(x.label) + (x.bond_expiry ? ` · s/d ${tgl(x.bond_expiry)}` : '') + (x.bond_amount ? ` · ${rp(x.bond_amount)}` : '');
+        const link = x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${label}</a>` : label;
+        const del = x.doc_id ? `<button type="button" data-del-doc="${esc(x.doc_id)}" aria-label="Hapus dokumen">hapus</button>` : '';
+        return `<span class="doc-chip">${link}${del}</span>`;
+      }).join('');
+      const tag = it.required ? '<span class="badge warn">Wajib</span>' : '<span class="badge">Opsional</span>';
+      const up = it.source === 'UPLOAD' ? `<div class="doc-up" data-up="${esc(it.doc_type)}">
+          <input type="file" accept=".pdf,image/*" aria-label="Pilih file ${esc(it.doc_name)}">
+          <input type="text" class="ref" placeholder="${it.doc_type === 'ADV_BOND' ? 'No. jaminan' : 'No. dokumen (opsional)'}" aria-label="Nomor dokumen">
+          <button type="button" class="btn primary small" data-upload="${esc(it.doc_type)}">Upload</button></div>
+          ${it.doc_type === 'ADV_BOND' ? `<div class="doc-bond" data-bond="1">
+            <input type="text" class="b-issuer" placeholder="Penerbit (bank/asuransi)" aria-label="Penerbit jaminan">
+            <input type="text" class="b-amount" inputmode="numeric" placeholder="Nilai jaminan (Rp)" aria-label="Nilai jaminan">
+            <input type="date" class="b-expiry" aria-label="Berlaku sampai"></div>` : ''}` : '<div class="small muted">Otomatis dari SMMS</div>';
+      return `<div class="doc-row">${ic}<div><div class="row-gap"><span class="doc-name">${esc(it.doc_name)}</span>${tag}</div>
+        <div class="doc-items">${chips || (it.source === 'SMMS' ? '<span class="small muted">Belum ada di SMMS</span>' : '')}</div>${up}</div></div>`;
+    }).join('') + `<p class="small ${d.missing ? 'overdue' : 'muted'}">${d.missing ? 'Belum lengkap: ' + esc(d.missing) : 'Semua dokumen wajib sudah lengkap ✓'}</p>`;
+  } catch (e) { $('docList').innerHTML = ''; $('docMsg').textContent = e.message; }
+}
+$('docClose').addEventListener('click', () => { $('docDialog').close(); if (docCtx) (docCtx.gate === 'ADVANCE' ? loadBayar : loadAP)(); });
+$('docList').addEventListener('click', async (ev) => {
+  const ub = ev.target.closest('[data-upload]');
+  if (ub) {
+    const row = ub.closest('.doc-up');
+    const file = row.querySelector('input[type=file]').files[0];
+    if (!file) { $('docMsg').textContent = 'Pilih file dulu.'; return; }
+    let bond = null;
+    if (ub.dataset.upload === 'ADV_BOND') {
+      const b = row.parentElement.querySelector('[data-bond]');
+      bond = { issuer: b.querySelector('.b-issuer').value.trim() || null, amount: parseNum(b.querySelector('.b-amount').value) || null, expiry: b.querySelector('.b-expiry').value || null };
+    }
+    ub.disabled = true; ub.textContent = 'Mengunggah…'; $('docMsg').textContent = '';
+    try {
+      const r = await attachDocument(docCtx.gate, docCtx.refId, ub.dataset.upload, file, row.querySelector('.ref').value, bond);
+      toast(r.missing ? 'Dokumen tersimpan. Masih kurang: ' + r.missing : 'Dokumen tersimpan. Semua dokumen wajib lengkap ✓');
+      openDocs(docCtx.gate, docCtx.refId, docCtx.title);
+    } catch (e) { $('docMsg').textContent = e.message; ub.disabled = false; ub.textContent = 'Upload'; }
+    return;
+  }
+  const db = ev.target.closest('[data-del-doc]');
+  if (db) {
+    if (!confirm('Hapus dokumen ini dari daftar? (File di Drive tidak ikut terhapus)')) return;
+    try { await api('fin_remove_document', { p_doc_id: Number(db.dataset.delDoc) }); openDocs(docCtx.gate, docCtx.refId, docCtx.title); }
+    catch (e) { $('docMsg').textContent = e.message; }
+  }
+});
 
 // ---------- pembayaran ----------
 const PAY_LABEL = { PLANNED: 'Rencana', DUE: 'Rencana', APPROVED: 'Disetujui', PAID: 'Lunas', CANCELLED: 'Batal' };
@@ -392,8 +516,12 @@ async function loadBayar() {
     $('payTable').innerHTML = '<tr><th>Jatuh tempo</th><th>Vendor / PO</th><th>Keterangan</th><th>Termin</th><th class="num">Nilai</th><th>Status</th><th></th></tr>' +
       (rows.length ? rows.map((p) => {
         let action = '';
-        if (['PLANNED', 'DUE'].includes(p.status) && hasAuthor('APY', p.project_code)) action = `<button type="button" class="btn primary small" data-approve-pay="${esc(p.schedule_id)}">Setujui</button>`;
-        if (p.status === 'APPROVED') action = `<button type="button" class="btn primary small" data-pay="${esc(p.schedule_id)}">Tandai Lunas</button>`;
+        const docBtn = p.schedule_type === 'ADVANCE' ? `<button type="button" class="btn ghost small" data-docs-adv="${esc(p.schedule_id)}" data-title="${esc(p.vendor_name + ' · ' + p.po_number + ' · ' + p.description)}">Dokumen${p.docs_missing ? ' !' : ' ✓'}</button>` : '';
+        if (['PLANNED', 'DUE'].includes(p.status) && hasAuthor('APY', p.project_code)) {
+          action = p.docs_missing ? `<span class="small overdue">Lengkapi dokumen dulu</span>` : `<button type="button" class="btn primary small" data-approve-pay="${esc(p.schedule_id)}">Setujui</button>`;
+        }
+        action = `<div class="row-gap">${docBtn}${action}</div>`;
+        if (p.status === 'APPROVED') action = `<div class="row-gap">${docBtn}<button type="button" class="btn primary small" data-pay="${esc(p.schedule_id)}">Tandai Lunas</button></div>`;
         const who = p.status === 'PAID' ? `<div class="small muted">${tgl(p.paid_at)} · ${esc(p.bank_label || '')} ${p.payment_ref ? '· ' + esc(p.payment_ref) : ''}</div>`
           : p.approved_by ? `<div class="small muted">disetujui ${esc(p.approved_by)}</div>` : '';
         return `<tr><td>${dueCell(p)}</td><td>${esc(p.vendor_name)}<div class="small muted">${esc(p.po_number)}${p.invoice_no ? ' · Inv ' + esc(p.invoice_no) : ''}${p.project_code ? ' · Proyek ' + esc(p.project_code) : ''}</div></td>
@@ -410,6 +538,8 @@ async function loadBayar() {
 }
 $('payFilter').addEventListener('change', loadBayar);
 $('payTable').addEventListener('click', async (ev) => {
+  const dd = ev.target.closest('[data-docs-adv]');
+  if (dd) { openDocs('ADVANCE', Number(dd.dataset.docsAdv), dd.dataset.title); return; }
   const a = ev.target.closest('[data-approve-pay]');
   if (a) {
     if (!confirm('Setujui pembayaran ini?')) return;
