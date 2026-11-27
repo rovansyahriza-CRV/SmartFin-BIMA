@@ -53,14 +53,16 @@ async function rpc(fn, params = {}) {
 const api = (fn, params = {}) => rpc(fn, { p_token: session.token, ...params });
 
 const hasPic = (list) => list.split(',').some((p) => session.pic.includes(p));
+const isSuper = () => session.pic.includes('all') || session.author.includes('all');
 const hasAuthor = (code, projectCode) => {
   const c = code.toLowerCase();
-  return session.author.includes(c) || (projectCode && session.author.includes(`${c}-${String(projectCode).toLowerCase()}`));
+  return isSuper() || session.author.includes(c) || (projectCode && session.author.includes(`${c}-${String(projectCode).toLowerCase()}`));
 };
+const hasAnyAuthor = (code) => { const c = code.toLowerCase(); return isSuper() || session.author.some((a) => a === c || a.startsWith(c + '-')); };
 
 function statusBadge(s) {
-  const ok = ['COCOK', 'MATCHED', 'APPROVED', 'POSTED', 'PAID', 'AKTIF'];
-  const warn = ['SELISIH_HARGA', 'SELISIH_QTY', 'MELEBIHI_PO', 'HOLD', 'PERLU_DILENGKAPI', 'PERLU_DICEK', 'VOID'];
+  const ok = ['COCOK', 'MATCHED', 'APPROVED', 'POSTED', 'PAID', 'AKTIF', 'LUNAS'];
+  const warn = ['SELISIH_HARGA', 'SELISIH_QTY', 'MELEBIHI_PO', 'HOLD', 'PERLU_DILENGKAPI', 'PERLU_DICEK', 'VOID', 'PARTIAL_PAID'];
   const cls = ok.includes(s) ? 'ok' : warn.includes(s) ? 'warn' : '';
   return `<span class="badge ${cls}">${esc(String(s || '-').replace(/_/g, ' '))}</span>`;
 }
@@ -188,6 +190,7 @@ async function loadDashboard() {
     $('kpis').innerHTML =
       kpi('Hutang belum ditagih vendor', rpShort(k.hutangBelumDitagih), 'Barang sudah diterima, invoice belum masuk') +
       kpi('Hutang usaha (invoice approved)', rpShort(k.hutangUsaha), `Jatuh tempo ≤ 7 hari: ${rpShort(k.jatuhTempo7Hari)}`, num(k.jatuhTempo7Hari) > 0) +
+      kpi('Pembayaran', rpShort(k.siapDibayar || 0), `Siap dibayar · ${k.menungguApproval || 0} menunggu approval APY`, (k.menungguApproval || 0) > 0) +
       kpi('Komitmen PO vs Budget', rpShort(k.komitmenTotal), num(k.budgetTotal) > 0 ? `Budget ${rpShort(k.budgetTotal)}` : 'RAB belum diinput', num(k.budgetTotal) === 0) +
       kpi('Realisasi biaya proyek', rpShort(k.realisasiTotal), 'Material diserahkan ke end user') +
       kpi('Jurnal draft', String(k.jurnalDraft), k.errorJurnal > 0 ? `${k.errorJurnal} error jurnal otomatis` : 'Menunggu posting (PJ)', k.errorJurnal > 0) +
@@ -198,6 +201,10 @@ async function loadDashboard() {
 
     $('dashDraft').innerHTML = '<tr><th>Tanggal</th><th>Sumber</th><th>Keterangan</th><th class="num">Nilai</th></tr>' +
       (d.draftJournals.length ? d.draftJournals.map((j) => `<tr><td>${tgl(j.journal_date)}</td><td><span class="badge src">${esc(j.source_system)}</span></td><td>${esc(j.description)}</td><td class="num">${rp(j.amount)}</td></tr>`).join('') : emptyRow(4, 'Tidak ada jurnal draft'));
+
+    const up = d.upcomingPayments || [];
+    $('dashPay').innerHTML = '<tr><th>Jatuh tempo</th><th>Vendor / PO</th><th class="num">Nilai</th><th>Status</th></tr>' +
+      (up.length ? up.map((p) => `<tr><td>${dueCell(p)}</td><td>${esc(p.vendor_name)}<div class="small muted">${esc(p.po_number)}</div></td><td class="num">${rp(p.amount)}</td><td>${payBadge(p.status)}</td></tr>`).join('') : emptyRow(4, 'Tidak ada pembayaran terjadwal'));
 
     const m = d.matchSummary || {};
     $('dashMatch').innerHTML = Object.keys(m).length
@@ -252,7 +259,7 @@ async function loadAP() {
     cache.ap = d;
     $('invTable').innerHTML = '<tr><th>No. Invoice</th><th>Vendor / PO</th><th>Tanggal</th><th>Jatuh tempo</th><th class="num">Total</th><th>Status</th><th></th></tr>' +
       (d.invoices.length ? d.invoices.map((i) => {
-        const canApprove = i.status === 'MATCHED' && session.author.some((a) => a === 'ai' || a.startsWith('ai-'));
+        const canApprove = i.status === 'MATCHED' && hasAnyAuthor('AI');
         return `<tr><td><b>${esc(i.invoice_no)}</b></td><td>${esc(i.vendor_name)}<br><span class="muted">${esc(i.po_number)}</span></td><td>${tgl(i.invoice_date)}</td><td>${tgl(i.due_date)}</td><td class="num">${rp(i.total_amount)}</td>
           <td>${statusBadge(i.status)}${i.hold_reason ? `<div class="small muted">${esc(i.hold_reason)}</div>` : ''}${i.approved_by ? `<div class="small muted">oleh ${esc(i.approved_by)}</div>` : ''}</td>
           <td>${canApprove ? `<button type="button" class="btn primary small" data-approve-inv="${esc(i.invoice_id)}">Approve</button>` : ''}</td></tr>`;
@@ -279,7 +286,12 @@ $('invTable').addEventListener('click', async (ev) => {
 function openInvoice() {
   const lines = (cache.ap && cache.ap.poLines) || [];
   const pos = {};
-  lines.forEach((l) => { if (num(l.qty_received) > num(l.qty_invoiced)) pos[l.po_id] = `${l.po_number} — ${l.vendor_name}`; });
+  const terms = (cache.ap && cache.ap.poTerms) || [];
+  lines.forEach((l) => {
+    const t = terms.find((x) => x.po_id === l.po_id);
+    const chargeLeft = t ? num(t.mobilisasi_cost) + num(t.other_service_cost) - num(t.charges_invoiced) : 0;
+    if (num(l.qty_received) > num(l.qty_invoiced) || chargeLeft > 0) pos[l.po_id] = `${l.po_number} — ${l.vendor_name}`;
+  });
   if (!Object.keys(pos).length) { toast('Tidak ada PO dengan barang diterima yang belum ditagih.', true); return; }
   $('iPo').innerHTML = Object.entries(pos).map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join('');
   $('invForm').reset();
@@ -290,6 +302,11 @@ function openInvoice() {
 }
 function renderInvoiceLines() {
   const poId = Number($('iPo').value);
+  const t = (cache.ap.poTerms || []).find((x) => x.po_id === poId);
+  const capMob = t ? num(t.mobilisasi_cost) : 0, capOth = t ? num(t.other_service_cost) : 0;
+  $('iChargeBox').hidden = !(capMob + capOth > 0);
+  $('iMob').value = '0'; $('iOth').value = '0';
+  $('iTermInfo').textContent = t ? `Termin: ${t.term_text || '-'} · Penawaran vendor: mobilisasi ${rp(capMob)}, jasa lain ${rp(capOth)} · sudah ditagih ${rp(t.charges_invoiced)}` : '';
   const lines = cache.ap.poLines.filter((l) => l.po_id === poId);
   $('iLines').innerHTML = '<tr><th>Item</th><th class="num">Diterima</th><th class="num">Sudah ditagih</th><th>Qty invoice</th><th>Harga satuan</th></tr>' +
     lines.map((l) => {
@@ -306,8 +323,17 @@ function invoiceLines() {
     unit_price: parseNum(tr.querySelector('.ip').value)
   })).filter((l) => l.qty > 0);
 }
+function chargeLines() {
+  const out = [];
+  if (parseNum($('iMob').value) > 0) out.push({ charge_type: 'MOBILISASI', amount: parseNum($('iMob').value), description: 'Biaya mobilisasi' });
+  if (parseNum($('iOth').value) > 0) out.push({ charge_type: 'OTHER_SERVICE', amount: parseNum($('iOth').value), description: 'Biaya jasa lain' });
+  return out;
+}
+function invoiceSubtotal() {
+  return invoiceLines().reduce((s, l) => s + l.qty * l.unit_price, 0) + chargeLines().reduce((s, c) => s + c.amount, 0);
+}
 function calcInvoice() {
-  const sub = invoiceLines().reduce((s, l) => s + l.qty * l.unit_price, 0);
+  const sub = invoiceSubtotal();
   const ppn = $('iPpn').checked ? Math.round(sub * 0.11) : 0;
   $('iTotal').textContent = rp(sub + ppn - parseNum($('iPph').value));
 }
@@ -317,9 +343,9 @@ $('invForm').addEventListener('input', calcInvoice);
 $('invCancel').addEventListener('click', () => $('invDialog').close());
 $('invForm').addEventListener('submit', async (ev) => {
   ev.preventDefault();
-  const lines = invoiceLines();
-  if (!lines.length) { $('invMsg').textContent = 'Isi minimal 1 qty invoice.'; return; }
-  const sub = lines.reduce((s, l) => s + l.qty * l.unit_price, 0);
+  const lines = invoiceLines().concat(chargeLines());
+  if (!lines.length) { $('invMsg').textContent = 'Isi minimal 1 qty invoice atau biaya tambahan.'; return; }
+  const sub = invoiceSubtotal();
   try {
     const r = await api('fin_create_invoice', {
       p_po_id: Number($('iPo').value), p_invoice_no: $('iNo').value.trim(), p_invoice_date: $('iDate').value,
@@ -330,6 +356,102 @@ $('invForm').addEventListener('submit', async (ev) => {
     toast(r.status === 'MATCHED' ? 'Invoice tersimpan: cocok dengan PO & penerimaan (siap di-approve)' : 'Invoice tersimpan dengan status HOLD: ' + (r.hold_reason || 'ada selisih'), r.status !== 'MATCHED');
     loadAP();
   } catch (e) { $('invMsg').textContent = e.message; }
+});
+
+
+// ---------- pembayaran ----------
+const PAY_LABEL = { PLANNED: 'Rencana', DUE: 'Rencana', APPROVED: 'Disetujui', PAID: 'Lunas', CANCELLED: 'Batal' };
+function payBadge(s) {
+  const cls = s === 'PAID' ? 'ok' : s === 'APPROVED' ? 'info' : s === 'CANCELLED' ? '' : 'warn';
+  return `<span class="badge ${cls}">${esc(PAY_LABEL[s] || s)}</span>`;
+}
+function dueCell(p) {
+  if (p.waiting_client) return '<span class="badge">Menunggu klien</span>';
+  if (!p.due_date) return '-';
+  const overdue = p.status !== 'PAID' && new Date(p.due_date) < new Date(today());
+  return `<span class="${overdue ? 'overdue' : ''}">${tgl(p.due_date)}${overdue ? ' · lewat' : ''}</span>`;
+}
+let payingSchedule = null;
+async function loadBayar() {
+  try {
+    const d = await api('fin_payments');
+    cache.bayar = d;
+    const s = d.schedules.filter((x) => x.status !== 'CANCELLED');
+    const open = s.filter((x) => x.status !== 'PAID');
+    const sum = (arr) => arr.reduce((t, x) => t + num(x.amount), 0);
+    const week = open.filter((x) => x.due_date && new Date(x.due_date) <= new Date(Date.now() + 7 * 864e5));
+    const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
+    $('payKpis').innerHTML =
+      kpi('Menunggu approval APY', rpShort(sum(open.filter((x) => x.status !== 'APPROVED'))), `${open.filter((x) => x.status !== 'APPROVED').length} jadwal`) +
+      kpi('Siap dibayar', rpShort(sum(open.filter((x) => x.status === 'APPROVED'))), `${open.filter((x) => x.status === 'APPROVED').length} jadwal disetujui`) +
+      kpi('Jatuh tempo ≤ 7 hari', rpShort(sum(week)), `${week.length} jadwal`, week.length > 0) +
+      kpi('Sudah dibayar', rpShort(s.filter((x) => x.status === 'PAID').reduce((t, x) => t + num(x.paid_amount || x.amount), 0)), 'Total tercatat');
+
+    const f = $('payFilter').value;
+    const rows = d.schedules.filter((x) => f === 'ALL' || (f === 'PAID' ? x.status === 'PAID' : !['PAID', 'CANCELLED'].includes(x.status)));
+    $('payTable').innerHTML = '<tr><th>Jatuh tempo</th><th>Vendor / PO</th><th>Keterangan</th><th>Termin</th><th class="num">Nilai</th><th>Status</th><th></th></tr>' +
+      (rows.length ? rows.map((p) => {
+        let action = '';
+        if (['PLANNED', 'DUE'].includes(p.status) && hasAuthor('APY', p.project_code)) action = `<button type="button" class="btn primary small" data-approve-pay="${esc(p.schedule_id)}">Setujui</button>`;
+        if (p.status === 'APPROVED') action = `<button type="button" class="btn primary small" data-pay="${esc(p.schedule_id)}">Tandai Lunas</button>`;
+        const who = p.status === 'PAID' ? `<div class="small muted">${tgl(p.paid_at)} · ${esc(p.bank_label || '')} ${p.payment_ref ? '· ' + esc(p.payment_ref) : ''}</div>`
+          : p.approved_by ? `<div class="small muted">disetujui ${esc(p.approved_by)}</div>` : '';
+        return `<tr><td>${dueCell(p)}</td><td>${esc(p.vendor_name)}<div class="small muted">${esc(p.po_number)}${p.invoice_no ? ' · Inv ' + esc(p.invoice_no) : ''}${p.project_code ? ' · Proyek ' + esc(p.project_code) : ''}</div></td>
+          <td>${esc(p.description)}${p.schedule_type === 'ADVANCE' ? ' <span class="badge info">Uang muka</span>' : ''}</td><td>${esc(p.term_type || '-')}</td>
+          <td class="num">${rp(p.status === 'PAID' ? (p.paid_amount || p.amount) : p.amount)}</td><td>${payBadge(p.status)}${who}</td><td>${action}</td></tr>`;
+      }).join('') : emptyRow(7, 'Tidak ada jadwal untuk filter ini'));
+
+    const bal = d.bankBalances || {};
+    $('bankTable').innerHTML = '<tr><th>Rekening</th><th>Akun COA</th><th class="num">Saldo (dari jurnal)</th><th>Status</th></tr>' +
+      (d.banks.length ? d.banks.map((b) => `<tr><td><b>${esc(b.account_label)}</b><div class="small muted">${esc(b.bank_name)}${b.account_last4 ? ' · ****' + esc(b.account_last4) : ''}</div></td>
+        <td>${esc(b.coa_code)}</td><td class="num">${rp(bal[b.bank_id])}</td><td>${b.is_active ? '<span class="badge ok">Aktif</span>' : '<span class="badge">Nonaktif</span>'}</td></tr>`).join('')
+        : emptyRow(4, 'Belum ada rekening. Tambahkan dulu sebelum menandai pembayaran lunas.'));
+  } catch (e) { toast(e.message, true); }
+}
+$('payFilter').addEventListener('change', loadBayar);
+$('payTable').addEventListener('click', async (ev) => {
+  const a = ev.target.closest('[data-approve-pay]');
+  if (a) {
+    if (!confirm('Setujui pembayaran ini?')) return;
+    a.disabled = true;
+    try { await api('fin_approve_payment', { p_schedule_id: Number(a.dataset.approvePay) }); toast('Pembayaran disetujui'); loadBayar(); }
+    catch (e) { toast(e.message, true); a.disabled = false; }
+    return;
+  }
+  const p = ev.target.closest('[data-pay]');
+  if (!p) return;
+  const s = cache.bayar.schedules.find((x) => String(x.schedule_id) === p.dataset.pay);
+  const banks = cache.bayar.banks.filter((b) => b.is_active);
+  if (!banks.length) { toast('Tambahkan rekening bank dulu di bagian Rekening Bank.', true); return; }
+  payingSchedule = s.schedule_id;
+  $('payInfo').textContent = `${s.vendor_name} · ${s.po_number} · ${s.description} · ${rp(s.amount)}`;
+  $('pBank').innerHTML = banks.map((b) => `<option value="${esc(b.bank_id)}">${esc(b.account_label)} (${esc(b.bank_name)})</option>`).join('');
+  $('pDate').value = today();
+  $('pAmount').value = num(s.amount).toLocaleString('id-ID');
+  $('pRef').value = '';
+  $('payMsg').textContent = '';
+  $('payDialog').showModal();
+});
+$('payCancel').addEventListener('click', () => $('payDialog').close());
+$('payForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  try {
+    const r = await api('fin_mark_paid', { p_schedule_id: payingSchedule, p_bank_id: Number($('pBank').value), p_paid_date: $('pDate').value,
+      p_paid_amount: parseNum($('pAmount').value), p_payment_ref: $('pRef').value || null });
+    $('payDialog').close();
+    toast(`Pembayaran ${rp(r.paid_amount)} tercatat lunas, jurnal bank dibuat`);
+    loadBayar();
+  } catch (e) { $('payMsg').textContent = e.message; }
+});
+$('bankForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  try {
+    const r = await api('fin_save_bank', { p_bank_id: null, p_bank_name: $('bkName').value, p_account_label: $('bkLabel').value,
+      p_account_last4: $('bkLast4').value || null, p_is_active: true });
+    toast(`Rekening tersimpan (akun ${r.coa_code})`);
+    $('bankForm').reset();
+    loadBayar();
+  } catch (e) { toast(e.message, true); }
 });
 
 // ---------- budget ----------
@@ -428,7 +550,7 @@ $('runDepBtn').addEventListener('click', async () => {
   } catch (e) { toast(e.message, true); }
 });
 
-const loaders = { dashboard: loadDashboard, ap: loadAP, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
+const loaders = { dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
 
 // ---------- start ----------
 (function init() {

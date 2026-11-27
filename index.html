@@ -71,6 +71,7 @@
       <nav id="nav">
         <a href="#dashboard" data-page="dashboard" data-pic="fin,fin-ap,fin-jv,fin-bva,fin-ast">Dashboard</a>
         <a href="#ap" data-page="ap" data-pic="fin-ap">Hutang Vendor (AP)</a>
+        <a href="#bayar" data-page="bayar" data-pic="fin-ap">Pembayaran</a>
         <a href="#jurnal" data-page="jurnal" data-pic="fin-jv">Jurnal</a>
         <a href="#budget" data-page="budget" data-pic="fin-bva">Budget vs Actual</a>
         <a href="#aset" data-page="aset" data-pic="fin-ast">Aset Tetap</a>
@@ -94,7 +95,11 @@
           <div class="card"><div class="card-head"><h2>Jurnal Draft Terbaru</h2><a href="#jurnal">Lihat semua</a></div>
             <div class="scroll"><table id="dashDraft"></table></div></div>
         </div>
-        <div class="card"><div class="card-head"><h2>Status 3-Way Match (baris PO)</h2></div><div id="dashMatch" class="chips"></div></div>
+        <div class="grid2">
+          <div class="card"><div class="card-head"><h2>Pembayaran Mendatang</h2><a href="#bayar">Buka Pembayaran</a></div>
+            <div class="scroll"><table id="dashPay"></table></div></div>
+          <div class="card"><div class="card-head"><h2>Status 3-Way Match (baris PO)</h2></div><div id="dashMatch" class="chips"></div></div>
+        </div>
       </section>
 
       <!-- AP -->
@@ -106,6 +111,35 @@
         </div>
         <div class="card"><div class="card-head"><h2>Invoice Vendor</h2></div><div class="scroll"><table id="invTable"></table></div></div>
         <div class="card"><div class="card-head"><h2>Baris PO & 3-Way Match</h2></div><div class="scroll"><table id="poTable"></table></div></div>
+      </section>
+
+
+      <!-- PEMBAYARAN -->
+      <section id="page-bayar" class="page" hidden>
+        <div class="page-head">
+          <div><h1>Pembayaran Vendor</h1><p class="muted">Jadwal dibuat otomatis dari termin RFQ. Alur: disetujui pemegang APY, lalu ditandai lunas.</p></div>
+          <div class="row-gap">
+            <label class="sr-only" for="payFilter">Filter</label>
+            <select id="payFilter"><option value="OPEN">Belum lunas</option><option value="PAID">Sudah lunas</option><option value="ALL">Semua</option></select>
+            <button type="button" class="btn ghost" data-refresh="bayar">Muat ulang</button>
+          </div>
+        </div>
+        <div class="kpis" id="payKpis"></div>
+        <div class="card"><div class="card-head"><h2>Jadwal Pembayaran</h2></div><div class="scroll"><table id="payTable"></table></div></div>
+        <div class="grid2">
+          <div class="card"><div class="card-head"><h2>Rekening Bank</h2></div><div class="scroll"><table id="bankTable"></table></div></div>
+          <form class="card" id="bankForm">
+            <div class="card-head"><h2>Tambah Rekening</h2></div>
+            <div class="row2">
+              <div><label for="bkName">Nama bank</label><input id="bkName" placeholder="mis. Bank Mandiri" required></div>
+              <div><label for="bkLabel">Label rekening</label><input id="bkLabel" placeholder="mis. Mandiri Operasional" required></div>
+            </div>
+            <label for="bkLast4">4 digit terakhir no. rekening (opsional)</label>
+            <input id="bkLast4" inputmode="numeric" maxlength="4" pattern="[0-9]{4}">
+            <p class="muted small">Tiap rekening otomatis dibuatkan sub-akun bank di COA (1-12xx).</p>
+            <button type="submit" class="btn primary">Simpan Rekening</button>
+          </form>
+        </div>
       </section>
 
       <!-- JURNAL -->
@@ -174,6 +208,13 @@
       <div><label for="iDue">Jatuh Tempo</label><input type="date" id="iDue"></div>
     </div>
     <div class="scroll"><table id="iLines"></table></div>
+    <div class="charge-box" id="iChargeBox">
+      <div class="small muted" id="iTermInfo"></div>
+      <div class="row2">
+        <div><label for="iMob">Biaya mobilisasi (Rp)</label><input id="iMob" inputmode="numeric" value="0"></div>
+        <div><label for="iOth">Biaya jasa lain (Rp)</label><input id="iOth" inputmode="numeric" value="0"></div>
+      </div>
+    </div>
     <div class="row2">
       <div><label class="check"><input type="checkbox" id="iPpn"> PPN 11%</label></div>
       <div><label for="iPph">PPh 23 (Rp, untuk jasa)</label><input id="iPph" inputmode="numeric" value="0"></div>
@@ -206,6 +247,25 @@
     <div class="dialog-actions">
       <button type="button" class="btn ghost" id="assetCancel">Batal</button>
       <button type="submit" class="btn primary" value="save">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="payDialog">
+  <form id="payForm" method="dialog">
+    <h2>Tandai Lunas</h2>
+    <p class="muted small" id="payInfo"></p>
+    <label for="pBank">Dibayar dari rekening</label><select id="pBank" required></select>
+    <div class="row2">
+      <div><label for="pDate">Tanggal bayar</label><input type="date" id="pDate" required></div>
+      <div><label for="pAmount">Nilai dibayar (Rp)</label><input id="pAmount" inputmode="numeric" required></div>
+    </div>
+    <label for="pRef">No. bukti transfer</label><input id="pRef">
+    <p class="muted small">Kalau dibayar sebagian, sisanya otomatis jadi jadwal baru.</p>
+    <p id="payMsg" class="error-text" role="alert"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" id="payCancel">Batal</button>
+      <button type="submit" class="btn primary" value="save">Simpan Pembayaran</button>
     </div>
   </form>
 </dialog>

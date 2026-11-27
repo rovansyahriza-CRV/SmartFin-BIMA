@@ -21,6 +21,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/002_auto_journal.sql` | Trigger jurnal otomatis (penerimaan vendor, serah terima, retur, invoice, pembayaran) + backfill | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/003_fixed_asset.sql` | Register aset tetap per unit (otomatis dari SMMS) + penyusutan bulanan | ✅ Sudah dijalankan (26 Nov 2026) |
 | `sql/migrations/004_auth_api.sql` | Login SmartFin (PIC = menu, Author = approval) + API `fin_*` untuk halaman web | ✅ Sudah dijalankan (26 Nov 2026) |
+| `sql/migrations/005_payment.sql` | Rekening bank, termin vendor, jadwal & approval pembayaran (APY), biaya tambahan invoice | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -95,3 +96,20 @@ Web hanya memanggil fungsi `public.fin_*`. Setiap fungsi mengecek token sesi (8 
 | `style.css` | Tampilan (warna BIMA) |
 
 Menu yang muncul mengikuti PIC akun. Tombol approval (Posting, Approve) hanya muncul untuk pemegang Author yang sesuai, dan tetap dicek ulang di server.
+
+### Pembayaran vendor (migration 005)
+
+| Termin di RFQ | Jadwal otomatis |
+|---|---|
+| Before Delivery | Uang muka 100% saat PO/SO Approved |
+| Partial (DP x%) | Uang muka x% saat PO Approved, sisanya saat invoice approve |
+| Net N / N Days | Pelunasan saat invoice approve, jatuh tempo = tanggal invoice + N hari |
+| After Received | Pelunasan, jatuh tempo = tanggal invoice |
+| Back to Back | Pelunasan tanpa tanggal, ditandai "menunggu klien" |
+
+- Kalau satu vendor mengirim termin lebih dari sekali, yang dipakai adalah kiriman **terakhir**.
+- Uang muka yang sudah dibayar otomatis memotong hutang saat invoice di-approve. Uang muka yang belum dibayar dibatalkan dan digabung ke pelunasan.
+- Alur bayar: pemegang **APY** menyetujui, lalu PIC FIN-AP menandai **lunas** dengan memilih rekening, tanggal, dan nomor bukti. Approver dan pembayar boleh orang yang sama. Kalau dibayar sebagian, sisanya otomatis jadi jadwal baru.
+- Rekening bank dikelola di halaman Pembayaran. Tiap rekening otomatis mendapat sub-akun COA `1-12xx`.
+- Invoice bisa memuat **biaya mobilisasi / jasa lain**. Biaya ini langsung jadi beban 5-1200, dan totalnya tidak boleh melebihi penawaran vendor di RFQ.
+- Perbaikan: `ALL` di kolom PIC sekarang juga memberi semua level approval (super admin).

@@ -128,6 +128,9 @@ dialog{border:0;border-radius:14px;padding:0;width:min(720px,94vw);box-shadow:0 
 dialog::backdrop{background:rgba(30,25,20,.45)}
 dialog form{padding:24px}
 .dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.charge-box{background:#faf7f3;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px}
+.badge.info{background:#e4ecf7;color:#1e4a80}
+.overdue{color:#b42318;font-weight:600}
 .total-line{text-align:right;margin:12px 0 0;font-size:15px}
 
 #toast{position:fixed;right:20px;bottom:20px;z-index:50;max-width:380px}
