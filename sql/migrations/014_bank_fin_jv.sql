@@ -1,6 +1,6 @@
 -- =====================================================================
 -- SmartFin BIMA — Migration 014: Menu Bank juga untuk FIN-JV (approver PJ)
--- Status : ⏳ Belum dijalankan
+-- Status : ✅ Sudah dijalankan (27 Nov 2026)
 --
 -- Sebelumnya menu Bank hanya untuk FIN-AP, jadi approver PJ harus punya FIN-AP juga.
 -- Sekarang pemegang FIN-JV bisa membuka menu Bank (lihat saldo, mutasi, rekonsiliasi) dan,

@@ -30,7 +30,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/011_ar.sql` | Piutang klien (PIC FIN-AR, approve PJ): invoice dari SMS approved + manual, retensi, PPN/PPh per invoice, penerimaan ke bank | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/012_payroll.sql` | Payroll (PIC FIN-PR): jurnal gaji bulanan dari Fusion4 dengan alokasi proyek, pembayaran THP / BPJS / PPh 21 (approve APY) | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/013_asset_disposal.sql` | Pelepasan aset tetap (dijual / dihapus): diajukan FIN-AST, disetujui PJ, jurnal laba/rugi | ✅ Sudah dijalankan (27 Nov 2026) |
-| `sql/migrations/014_bank_fin_jv.sql` | Menu Bank bisa dibuka FIN-JV (approver PJ tidak perlu FIN-AP); input tetap FIN-AP | ⏳ Belum dijalankan |
+| `sql/migrations/014_bank_fin_jv.sql` | Menu Bank bisa dibuka FIN-JV (approver PJ tidak perlu FIN-AP); input tetap FIN-AP | ✅ Sudah dijalankan (27 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 
