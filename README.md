@@ -315,7 +315,8 @@ Tombol **Cetak BBK** muncul di transaksi uang keluar yang sudah selesai:
 | Pendanaan (detail pinjaman) | Angsuran & biaya pinjaman | Disetujui APY |
 
 - PDF A4: kop BIMA, nomor **BBK/yyyy/mm/nnnn**, penerima, rekening, proyek, rincian, terbilang, baris jurnal, dan **QR per penandatangan** (penginput, approver, pembayar).
-- Tanda tangan diambil dari jejak approval yang sudah ada: tidak ada langkah tanda tangan tambahan. Nomor & QR terbit saat pertama kali dicetak dan tetap sama saat dicetak ulang.
+- Tanda tangan diambil dari jejak approval yang sudah ada: tidak ada langkah tanda tangan tambahan. **Nomor BBK & QR terbit otomatis** (trigger) saat transaksi lunas / disetujui, urut tanggal bayar; transaksi final lama diberi nomor saat migration dijalankan. Cetak ulang = nomor & QR sama.
+- **PDF tidak disimpan di server**: dibuat di browser saat tombol diklik dan terunduh ke perangkat pencetak. Yang tersimpan permanen di database: nomor BBK, isi pokok, kode QR.
 - Yang bisa mencetak: pemegang akses menunya (PIC). Kas & Kasbon untuk non-HO: hanya pengaju, penerima kasbon, atau pemegang kas.
 - QR membuka **`verifikasi.html?k=SF-…`** (tanpa login): status **Sah** / **Tidak berlaku** / **Tidak ditemukan**, nomor bukti, jenis, tanggal, penerima, nilai, rekening, proyek, dan semua penandatangan. Kode QR acak 64 bit.
 - Library PDF (jsPDF 2.5.1) dan QR (qrcode-generator 1.4.4) dimuat dari jsDelivr saat tombol diklik pertama kali.

@@ -10,8 +10,10 @@
 --   bank_txn          biaya admin, pajak bunga, transfer antar rekening, pengeluaran lain (APPROVED)
 --
 -- Tanda tangan diambil dari jejak approval yang sudah tersimpan (penginput, approver, pembayar),
--- jadi QR "terbit" dari approval itu sendiri: tidak ada langkah tanda tangan tambahan.
--- Nomor BBK dan kode QR dibuat saat bukti pertama kali dicetak, lalu tetap (cetak ulang = nomor & QR sama).
+-- jadi tidak ada langkah tanda tangan tambahan.
+-- Nomor BBK dan kode QR terbit OTOMATIS (trigger) saat transaksi mencapai status final (lunas / disetujui),
+-- urut menurut tanggal bayar. Transaksi final yang sudah ada sebelum migration ini diberi nomor sekaligus.
+-- PDF tidak disimpan di server: dibuat di browser saat tombol Cetak BBK diklik (cetak ulang = nomor & QR sama).
 -- Kode QR acak 16 karakter heksadesimal (64 bit), tidak bisa ditebak.
 --
 -- Halaman verifikasi publik (verifikasi.html?k=KODE) memanggil public.fin_verify_sign (tanpa login):
@@ -205,11 +207,71 @@ begin
 end; $$;
 
 -- ---------------------------------------------------------------------
--- Cetak: terbitkan nomor BBK & kode QR (sekali), kembalikan data lengkap untuk PDF
+-- Terbitkan nomor BBK & kode QR (sekali per transaksi). Dipanggil trigger & tombol cetak.
+-- ---------------------------------------------------------------------
+create or replace function finance.issue_voucher(p_source text, p_id bigint, p_issuer text default null)
+returns bigint language plpgsql security definer set search_path = '' as $$
+declare s jsonb; v_id bigint; v_prefix text; v_seq int; x jsonb; i int := 0; v_date date;
+begin
+  s := finance.voucher_source(p_source, p_id);
+  if s is null or not coalesce((s->>'valid')::boolean, false) then return null; end if;
+  select voucher_id into v_id from finance.voucher where source_table = p_source and source_id = p_id;
+  if v_id is null then
+    lock table finance.voucher in share row exclusive mode;
+    select voucher_id into v_id from finance.voucher where source_table = p_source and source_id = p_id;
+  end if;
+  if v_id is null then
+    v_date := coalesce((s->>'date')::date, current_date);
+    v_prefix := 'BBK/' || to_char(v_date, 'YYYY/MM') || '/';
+    select coalesce(max(substr(voucher_no, length(v_prefix) + 1)::int), 0) + 1 into v_seq
+      from finance.voucher where voucher_no like v_prefix || '%';
+    insert into finance.voucher (voucher_no, source_table, source_id, kind_label, voucher_date, payee, amount, bank_label,
+                                 project_code, description, ref_no, issued_by)
+    values (v_prefix || lpad(v_seq::text, 4, '0'), p_source, p_id, s->>'kind_label', v_date,
+            s->>'payee', (s->>'amount')::numeric, s->>'bank_label', s->>'project_code', s->>'description', s->>'ref_no',
+            coalesce(p_issuer, s->'signers'->-1->>'name'))
+    returning voucher_id into v_id;
+  end if;
+  for x in select * from jsonb_array_elements(s->'signers') loop
+    i := i + 1;
+    insert into finance.voucher_sign (sign_code, voucher_id, seq, role, signer_name, signed_at)
+    values ('SF-' || upper(encode(extensions.gen_random_bytes(8), 'hex')), v_id, i, x->>'role', x->>'name', (x->>'at')::timestamptz)
+    on conflict (voucher_id, seq) do nothing;
+  end loop;
+  return v_id;
+end; $$;
+
+-- Trigger: terbitkan BBK begitu transaksi uang keluar mencapai status final
+create or replace function finance.trg_issue_voucher()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare v_id bigint;
+begin
+  v_id := (to_jsonb(new) ->> case tg_table_name when 'payment_schedule' then 'schedule_id' when 'cash_request' then 'request_id'
+                                                when 'payroll_payment' then 'payment_id' else 'txn_id' end)::bigint;
+  if (tg_table_name = 'payment_schedule' and new.status = 'PAID')
+     or (tg_table_name = 'cash_request' and new.status in ('PAID','CLOSED'))
+     or (tg_table_name in ('payroll_payment','loan_txn','bank_txn') and new.status = 'APPROVED') then
+    begin
+      perform finance.issue_voucher(tg_table_name, v_id);
+    exception when others then
+      insert into finance.auto_journal_error (source_table, source_id, source_event, error_message)
+      values (tg_table_name, v_id::text, 'VOUCHER', sqlerrm);
+    end;
+  end if;
+  return null;
+end; $$;
+create trigger trg_sfv_payment_schedule after insert or update of status on finance.payment_schedule for each row execute function finance.trg_issue_voucher();
+create trigger trg_sfv_cash_request     after insert or update of status on finance.cash_request     for each row execute function finance.trg_issue_voucher();
+create trigger trg_sfv_payroll_payment  after insert or update of status on finance.payroll_payment  for each row execute function finance.trg_issue_voucher();
+create trigger trg_sfv_loan_txn         after insert or update of status on finance.loan_txn         for each row execute function finance.trg_issue_voucher();
+create trigger trg_sfv_bank_txn         after insert or update of status on finance.bank_txn         for each row execute function finance.trg_issue_voucher();
+
+-- ---------------------------------------------------------------------
+-- Cetak: kembalikan data lengkap untuk PDF (menerbitkan BBK kalau belum ada)
 -- ---------------------------------------------------------------------
 create or replace function public.fin_voucher(p_token text, p_source text, p_id bigint)
 returns jsonb language plpgsql security definer set search_path = '' as $$
-declare who bigint; s jsonb; v finance.voucher%rowtype; v_pics text[]; v_prefix text; v_seq int; x jsonb; i int := 0;
+declare who bigint; s jsonb; v finance.voucher%rowtype; v_pics text[];
 begin
   if p_source not in ('payment_schedule','cash_request','payroll_payment','loan_txn','bank_txn') then raise exception 'Jenis bukti tidak dikenal'; end if;
   s := finance.voucher_source(p_source, p_id);
@@ -221,27 +283,7 @@ begin
     raise exception 'Bukti ini hanya bisa dicetak oleh pengaju, penerima, pemegang kas, atau finance HO';
   end if;
   if not (s->>'valid')::boolean then raise exception 'Bukti hanya bisa dicetak setelah transaksi selesai disetujui / dibayar'; end if;
-
-  select * into v from finance.voucher where source_table = p_source and source_id = p_id;
-  if v.voucher_id is null then
-    lock table finance.voucher in share row exclusive mode;
-    v_prefix := 'BBK/' || to_char(coalesce((s->>'date')::date, current_date), 'YYYY/MM') || '/';
-    select coalesce(max(substr(voucher_no, length(v_prefix) + 1)::int), 0) + 1 into v_seq
-      from finance.voucher where voucher_no like v_prefix || '%';
-    insert into finance.voucher (voucher_no, source_table, source_id, kind_label, voucher_date, payee, amount, bank_label,
-                                 project_code, description, ref_no, issued_by)
-    values (v_prefix || lpad(v_seq::text, 4, '0'), p_source, p_id, s->>'kind_label', coalesce((s->>'date')::date, current_date),
-            s->>'payee', (s->>'amount')::numeric, s->>'bank_label', s->>'project_code', s->>'description', s->>'ref_no',
-            finance.employee_name(who))
-    returning * into v;
-  end if;
-
-  for x in select * from jsonb_array_elements(s->'signers') loop
-    i := i + 1;
-    insert into finance.voucher_sign (sign_code, voucher_id, seq, role, signer_name, signed_at)
-    values ('SF-' || upper(encode(extensions.gen_random_bytes(8), 'hex')), v.voucher_id, i, x->>'role', x->>'name', (x->>'at')::timestamptz)
-    on conflict (voucher_id, seq) do nothing;
-  end loop;
+  select * into v from finance.voucher where voucher_id = finance.issue_voucher(p_source, p_id, finance.employee_name(who));
 
   return jsonb_build_object(
     'voucher_no', v.voucher_no, 'kind_label', v.kind_label, 'date', v.voucher_date, 'payee', v.payee, 'amount', v.amount,
@@ -275,7 +317,27 @@ begin
 end; $$;
 
 revoke execute on function finance.voucher_source(text, bigint) from public, anon, authenticated;
+revoke execute on function finance.issue_voucher(text, bigint, text) from public, anon, authenticated;
+revoke execute on function finance.trg_issue_voucher() from public, anon, authenticated;
 revoke execute on function public.fin_voucher(text, text, bigint) from public;
 revoke execute on function public.fin_verify_sign(text) from public;
 grant execute on function public.fin_voucher(text, text, bigint) to anon, authenticated;
 grant execute on function public.fin_verify_sign(text) to anon, authenticated;
+
+-- Transaksi final yang sudah ada: terbitkan BBK sekaligus, urut tanggal bayar
+do $b$
+declare r record;
+begin
+  for r in
+    select * from (
+      select 'payment_schedule' src, schedule_id id, (paid_at at time zone 'Asia/Makassar')::date d, paid_at ts from finance.payment_schedule where status = 'PAID'
+      union all select 'cash_request', request_id, paid_at, paid_at::timestamptz from finance.cash_request where status in ('PAID','CLOSED')
+      union all select 'payroll_payment', payment_id, pay_date, approved_at from finance.payroll_payment where status = 'APPROVED'
+      union all select 'loan_txn', txn_id, txn_date, approved_at from finance.loan_txn where status = 'APPROVED' and kind in ('INSTALLMENT','FEE')
+      union all select 'bank_txn', txn_id, txn_date, approved_at from finance.bank_txn where status = 'APPROVED' and kind in ('ADMIN_FEE','INTEREST_TAX','TRANSFER','OTHER_OUT')
+    ) x order by d nulls last, ts nulls last
+  loop
+    perform finance.issue_voucher(r.src, r.id);
+  end loop;
+end $b$;
+
