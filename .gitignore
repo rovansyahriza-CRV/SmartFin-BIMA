@@ -1,2 +1,5 @@
 # shortcut desktop lokal (berisi path di komputer sendiri)
 SmartFin.url
+
+# dokumen internal (Guideline Book) - jangan dipush ke repo public
+docs/
