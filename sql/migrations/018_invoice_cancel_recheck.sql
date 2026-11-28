@@ -1,6 +1,6 @@
 -- =====================================================================
 -- SmartFin BIMA — Migration 018: Batalkan invoice vendor & cek ulang status
--- Status : ⏳ Belum dijalankan
+-- Status : ✅ Sudah dijalankan (28 Nov 2026)
 --
 -- 1. FIN-AP bisa MEMBATALKAN invoice yang belum di-approve (RECEIVED / MATCHED / HOLD), alasan wajib.
 --    Invoice batal tidak dihitung di 3-way match, jadi PO-nya bisa diinvoice ulang dengan nomor yang sama.
