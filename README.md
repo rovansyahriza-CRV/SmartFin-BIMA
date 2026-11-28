@@ -32,6 +32,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/013_asset_disposal.sql` | Pelepasan aset tetap (dijual / dihapus): diajukan FIN-AST, disetujui PJ, jurnal laba/rugi | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/014_bank_fin_jv.sql` | Menu Bank bisa dibuka FIN-JV (approver PJ tidak perlu FIN-AP); input tetap FIN-AP | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/015_tax.sql` | Menu Pajak (PIC FIN-TAX): rekap PPN (masa = tanggal faktur), PPh 21, PPh 23, PPh dipotong klien, tanggal faktur | ✅ Sudah dijalankan (27 Nov 2026) |
+| `sql/migrations/016_funding.sql` | Pendanaan: pinjaman bank / non-bank (modal kerja, leasing), jadwal angsuran, bunga per proyek, arus kas pendanaan | ✅ Sudah dijalankan |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -282,3 +283,20 @@ Menu **Pajak** (PIC `FIN-TAX`) menampilkan rekap per masa (bulan) dari transaksi
 
 - Kalau tanggal faktur belum diisi, masa sementara memakai tanggal transaksi dan barisnya ditandai **belum diisi**. Klik **Isi faktur** untuk melengkapi nomor & tanggal faktur (FIN-TAX untuk semua dokumen; FIN-AP / FIN-AR / FIN-AST untuk dokumen modulnya sendiri).
 - Tabel **Saldo Akun Pajak** menunjukkan saldo PPN Keluaran, PPN Masukan, Hutang PPh 21, Hutang PPh 23, dan PPh 23 Dibayar Dimuka per akhir masa (jurnal POSTED) untuk cek setoran.
+
+### Pendanaan (migration 016)
+
+Menu **Pendanaan** (input `FIN-AP`; bisa dilihat `FIN-JV`) untuk pinjaman **bank** dan **non-bank**, jenis **modal kerja**, **leasing**, atau lainnya. Setiap pinjaman punya **kode proyek** (proyek klien atau internal 901–905); bunga & biaya dibebankan ke proyek itu.
+
+| Langkah | Diinput | Disetujui | Jurnal (langsung POSTED) |
+|---|---|---|---|
+| Register pinjaman baru | FIN-AP | PJ proyek | — (jadwal angsuran dibuat otomatis) |
+| Register pinjaman **berjalan** (sisa pokok per cut-off) | FIN-AP | PJ proyek | Dr 3-9000 Ekuitas Saldo Awal / Cr hutang pinjaman |
+| Pencairan | FIN-AP | PJ proyek | Dr Bank (atau akun lain, mis. 2-1100 kalau leasing dibayar langsung ke vendor) + Dr 6-1610 provisi / Cr hutang pinjaman |
+| Angsuran | FIN-AP | APY proyek | Dr hutang pinjaman (pokok) + Dr 6-1600 bunga + Dr 6-1610 denda/biaya / Cr Bank + Cr 2-1410 PPh 23 bunga (non-bank) |
+| Biaya lain | FIN-AP | APY proyek | Dr 6-1610 / Cr Bank |
+
+- Akun hutang: **2-1600** Hutang Bank, **2-1610** Hutang Pinjaman Non-Bank, **2-1700** Hutang Leasing.
+- Metode jadwal: **Anuitas**, **Flat**, **Bunga saja (pokok di akhir)**, atau **Manual** (angsuran diisi sesuai tagihan / rekening koran, cocok untuk KMK rekening koran). Nilai angsuran tetap bisa disesuaikan dengan tagihan aktual.
+- Pencairan tidak boleh melebihi plafon; pokok angsuran tidak boleh melebihi sisa pokok. Pinjaman otomatis **Lunas** saat sisa pokok 0 (pencairan baru membuka lagi).
+- PPh 23 atas bunga pinjaman non-bank ikut muncul di menu **Pajak** (PPh 23 dipotong BIMA). Di laporan **Arus Kas**, jurnal pinjaman masuk kategori **Pendanaan**.

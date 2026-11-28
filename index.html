@@ -264,6 +264,23 @@
         <div class="card panel" id="taxBankCard"><div class="card-head"><div><h2>PPh Final Bunga Bank</h2><p>Dipotong bank</p></div></div><div class="scroll"><table id="taxBank"></table></div></div>
       </section>
 
+      <!-- PENDANAAN -->
+      <section id="page-dana" class="page" hidden>
+        <div class="page-head">
+          <div><h1>Pendanaan</h1><p class="muted">Pinjaman bank &amp; non-bank (modal kerja, leasing): register, pencairan, jadwal &amp; pembayaran angsuran. Bunga dibebankan ke kode proyek pinjaman. Input FIN-AP; register &amp; pencairan disetujui PJ, angsuran disetujui APY.</p></div>
+          <div class="row-gap">
+            <button type="button" class="btn ghost" data-refresh="dana">Muat ulang</button>
+            <button type="button" class="btn primary" id="newLoanBtn">+ Pinjaman</button>
+          </div>
+        </div>
+        <div class="kpis" id="danaKpis"></div>
+        <div class="card panel">
+          <div class="card-head"><div><h2>Daftar Pinjaman</h2><p>Draft &amp; transaksi menunggu persetujuan tampil di bawah tiap pinjaman</p></div>
+            <select id="danaFilter" aria-label="Filter pinjaman"><option value="OPEN">Aktif &amp; draft</option><option value="ALL">Semua</option></select></div>
+          <div class="scroll"><table id="danaTable"></table></div>
+        </div>
+      </section>
+
       <!-- KAS & KASBON -->
       <section id="page-kas" class="page" hidden>
         <div class="page-head">

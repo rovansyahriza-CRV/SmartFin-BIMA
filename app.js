@@ -176,6 +176,7 @@ const ICON = {
   ar: 'M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0c1.1.128 1.907 1.077 1.907 2.185ZM9.75 9h.008v.008H9.75V9Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm4.125 4.5h.008v.008h-.008V13.5Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z',
   payroll: 'M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z',
   pajak: 'M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z',
+  dana: 'M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5',
   truck: 'M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12',
   scale: 'M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z',
   trend: 'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
@@ -191,6 +192,7 @@ const NAV = [
     { page: 'bank', label: 'Bank', pic: 'fin-ap,fin-jv' },
     { page: 'kas', label: 'Kas & Kasbon', pic: 'fin-ap,fin-pc' },
     { page: 'ar', label: 'Piutang Klien (AR)', pic: 'fin-ar,fin-jv' },
+    { page: 'dana', label: 'Pendanaan', pic: 'fin-ap,fin-jv' },
     { page: 'payroll', label: 'Payroll', pic: 'fin-pr,fin-ap' }] },
   { group: 'Pembukuan & Kontrol', items: [
     { page: 'jurnal', label: 'Jurnal', pic: 'fin-jv' },
@@ -1786,6 +1788,204 @@ $('taxExport').addEventListener('click', async () => {
   } catch (e) { toast(e.message, true); }
 });
 
+// ---------- pendanaan ----------
+const LOAN_KIND = { MODAL_KERJA: 'Modal kerja', LEASING: 'Leasing', OTHER: 'Lainnya' };
+const LOAN_METHOD = { ANNUITY: 'Anuitas', FLAT: 'Flat', INTEREST_ONLY: 'Bunga saja, pokok di akhir', MANUAL: 'Manual (sesuai tagihan)' };
+const LOAN_TXN = { OPENING: 'Sisa pokok awal', DRAWDOWN: 'Pencairan', INSTALLMENT: 'Angsuran', FEE: 'Biaya' };
+const nextDue = (l) => l.schedule.find((s) => !s.paid && !s.planned);
+async function loadDana() {
+  try { renderDana(await api('fin_loans')); } catch (e) { toast(e.message, true); }
+}
+function renderDana(d) {
+  cache.dana = d; if (!d) return;
+  const k = d.kpi;
+  const kpi = (label, val, sub, alert) => `<div class="kpi${alert ? ' alert' : ''}"><div class="k-label">${esc(label)}</div><div class="k-val">${esc(val)}</div><div class="k-sub">${esc(sub)}</div></div>`;
+  $('danaKpis').innerHTML =
+    kpi('Total sisa pokok', rpShort(k.outstanding), `${d.loans.filter((l) => l.status === 'ACTIVE').length} pinjaman aktif`) +
+    kpi('Bank', rpShort(k.bank), 'Modal kerja / kredit bank') +
+    kpi('Non-bank', rpShort(k.nonbank), 'Pinjaman pihak lain') +
+    kpi('Leasing', rpShort(k.leasing), 'Pembiayaan alat / kendaraan') +
+    kpi('Jatuh tempo ≤ 30 hari', rpShort(k.due30), 'Pokok + bunga sesuai jadwal', num(k.due30) > 0) +
+    kpi('Bunga dibayar tahun ini', rpShort(k.interestYtd), num(k.pending) ? `${k.pending} menunggu persetujuan` : 'Beban 6-1600', num(k.pending) > 0);
+  const f = $('danaFilter').value;
+  const rows = d.loans.filter((l) => f === 'ALL' || ['DRAFT', 'ACTIVE'].includes(l.status));
+  const st = { DRAFT: ['warn', 'Menunggu PJ'], ACTIVE: ['ok', 'Aktif'], CLOSED: ['', 'Lunas'], REJECTED: ['', 'Ditolak'] };
+  const ap = hasPic('fin-ap');
+  $('danaTable').innerHTML = '<tr><th>Pemberi pinjaman</th><th>Jenis · proyek</th><th class="num">Plafon / pokok</th><th class="num">Sisa pokok</th><th>Bunga · angsuran berikut</th><th>Status</th><th></th></tr>' +
+    (rows.length ? rows.map((l) => {
+      const [c, t] = st[l.status] || ['', l.status];
+      const pj = hasAuthor('PJ', l.project_code), apy = hasAuthor('APY', l.project_code);
+      const nd = nextDue(l);
+      const acts = [`<button type="button" class="btn ghost small" data-loan-view="${l.loan_id}">Detail</button>`];
+      if (l.status === 'DRAFT') {
+        if (ap) acts.push(`<button type="button" class="btn ghost small" data-loan-edit="${l.loan_id}">Ubah</button>`);
+        if (pj) acts.push(`<button type="button" class="btn primary small" data-loan-approve="${l.loan_id}">Setujui</button><button type="button" class="btn ghost small" data-loan-reject="${l.loan_id}">Tolak</button>`);
+      }
+      if (['ACTIVE', 'CLOSED'].includes(l.status) && ap) {
+        if (!l.is_existing && num(l.principal) - num(l.outstanding_planned) > 0.004) acts.push(`<button type="button" class="btn ghost small" data-loan-draw="${l.loan_id}">Cairkan</button>`);
+        if (l.status === 'ACTIVE') acts.push(`<button type="button" class="btn primary small" data-loan-pay="${l.loan_id}">Bayar angsuran</button>`);
+        acts.push(`<button type="button" class="btn ghost small" data-loan-fee="${l.loan_id}">Biaya</button>`);
+      }
+      const pend = l.txns.filter((x) => x.status === 'PLANNED');
+      return `<tr><td><b>${esc(l.lender_name)}</b><div class="small muted">${esc(l.loan_no)} · ${l.lender_type === 'BANK' ? 'Bank' : 'Non-bank'}${l.is_existing ? ' · berjalan' : ''}</div></td>
+        <td>${esc(LOAN_KIND[l.kind])}<div class="small muted"><span class="code-chip">${esc(l.project_code)}</span> ${esc(l.project_name)}</div></td>
+        <td class="num">${rp(l.principal)}<div class="small muted">${l.is_existing ? 'sisa per ' + tgl(l.start_date) : 'akad ' + tgl(l.start_date)}</div></td>
+        <td class="num"><b>${['DRAFT', 'REJECTED'].includes(l.status) ? '-' : rp(l.outstanding)}</b><div class="small muted">${esc(l.account)}</div></td>
+        <td>${num(l.interest_rate)}% / th · ${esc(LOAN_METHOD[l.method])}<div class="small ${nd && nd.due_date < today() ? 'overdue' : 'muted'}">${nd ? `Ke-${nd.seq} ${tgl(nd.due_date)} · ${rp(num(nd.principal) + num(nd.interest))}` : l.method === 'MANUAL' ? 'tanpa jadwal' : 'jadwal selesai'}</div></td>
+        <td><span class="badge ${c}">${esc(t)}</span>${l.status === 'REJECTED' ? `<div class="small overdue">${esc(l.reject_reason || '')}</div>` : ''}</td>
+        <td><div class="row-gap">${acts.join('')}</div></td></tr>`
+        + pend.map((x) => {
+          const can = x.kind === 'DRAWDOWN' ? pj : apy;
+          const amt = x.kind === 'DRAWDOWN' ? rp(x.principal_amount) : rp(num(x.principal_amount) + num(x.interest_amount) + num(x.fee_amount));
+          return `<tr><td></td><td colspan="2" class="small">↳ ${esc(LOAN_TXN[x.kind])}${x.schedule_seq ? ' ke-' + x.schedule_seq : ''} ${tgl(x.txn_date)} · ${esc(x.bank_label || x.counter_account || '')}${x.ref_no ? ' · ' + esc(x.ref_no) : ''} <span class="muted">oleh ${esc(x.requested_by || '')}</span></td>
+            <td class="num small">${amt}${num(x.interest_amount) ? `<div class="muted">bunga ${rp(x.interest_amount)}</div>` : ''}</td><td></td>
+            <td><span class="badge warn">Menunggu ${x.kind === 'DRAWDOWN' ? 'PJ' : 'APY'}</span></td>
+            <td><div class="row-gap">${can ? `<button type="button" class="btn primary small" data-ltx-approve="${x.txn_id}">Setujui</button><button type="button" class="btn ghost small" data-ltx-reject="${x.txn_id}">Tolak</button>` : ''}</div></td></tr>`;
+        }).join('');
+    }).join('') : emptyRow(7, 'Belum ada pinjaman. Klik + Pinjaman untuk mendaftarkan pinjaman yang sudah berjalan atau yang baru.'));
+  $('newLoanBtn').hidden = !ap;
+}
+$('danaFilter').addEventListener('change', () => renderDana(cache.dana));
+
+function loanForm(l) {
+  const d = cache.dana;
+  openCash(l ? `Ubah Pinjaman · ${l.loan_no}` : 'Pinjaman Baru', 'Daftarkan pinjaman yang sudah berjalan (isi sisa pokok per tanggal cut-off) atau pinjaman baru (isi plafon). Disetujui PJ proyek.', `<div id="lnWrap">
+    <div class="row2"><div><label for="lnLender">Pemberi pinjaman</label><input id="lnLender" value="${esc(l ? l.lender_name : '')}" placeholder="mis. Bank Mandiri / PT ABC Finance" required></div>
+      <div><label for="lnNo">No. perjanjian</label><input id="lnNo" value="${esc(l ? l.loan_no : '')}" required></div></div>
+    <div class="row2"><div><label for="lnType">Jenis pemberi</label><select id="lnType">${opt('BANK', 'Bank', !l || l.lender_type === 'BANK')}${opt('NON_BANK', 'Non-bank (multifinance, perusahaan, perorangan)', l && l.lender_type === 'NON_BANK')}</select></div>
+      <div><label for="lnKind">Jenis pinjaman</label><select id="lnKind">${Object.entries(LOAN_KIND).map(([v, t]) => opt(v, t, (l ? l.kind : 'MODAL_KERJA') === v)).join('')}</select></div></div>
+    <div class="row2"><div><label for="lnProj">Kode proyek (beban bunga)</label><select id="lnProj">${d.projects.map((p) => opt(p.project_id, `${p.code} · ${p.name}`, l && l.project_id === p.project_id)).join('')}</select></div>
+      <div><label for="lnBank">Rekening terkait</label><select id="lnBank"><option value="">—</option>${d.banks.map((b) => opt(b.bank_id, b.label, l && l.bank_id === b.bank_id)).join('')}</select></div></div>
+    <label class="rpt-check" style="margin-top:12px"><input type="checkbox" id="lnExist" ${l && l.is_existing ? 'checked' : ''}> Pinjaman sudah berjalan sebelum SmartFin dipakai</label>
+    <div class="row2"><div><label for="lnPrin" id="lnPrinLbl">Plafon / pokok (Rp)</label><input id="lnPrin" inputmode="numeric" value="${l ? num(l.principal).toLocaleString('id-ID') : ''}" required></div>
+      <div><label for="lnStart" id="lnStartLbl">Tanggal akad</label><input type="date" id="lnStart" value="${l ? l.start_date : today()}" required></div></div>
+    <div class="row2"><div><label for="lnRate">Bunga (% per tahun)</label><input id="lnRate" inputmode="decimal" value="${l ? num(l.interest_rate) : ''}"></div>
+      <div><label for="lnMethod">Metode angsuran</label><select id="lnMethod">${Object.entries(LOAN_METHOD).map(([v, t]) => opt(v, t, (l ? l.method : 'ANNUITY') === v)).join('')}</select></div></div>
+    <div class="row2" id="lnSched"><div><label for="lnTenor" id="lnTenorLbl">Tenor (bulan)</label><input id="lnTenor" inputmode="numeric" value="${l && l.tenor_months ? l.tenor_months : ''}"></div>
+      <div><label for="lnFirst">Tanggal angsuran pertama / berikutnya</label><input type="date" id="lnFirst" value="${l && l.first_due_date ? l.first_due_date : ''}"></div></div>
+    <label class="rpt-check" style="margin-top:12px"><input type="checkbox" id="lnPph" ${l && l.pph23_interest ? 'checked' : ''}> Potong PPh 23 atas bunga (umumnya untuk pemberi pinjaman non-bank)</label>
+    <div class="row2"><div><label for="lnColl">Jaminan</label><input id="lnColl" value="${esc(l && l.collateral || '')}" placeholder="mis. alat berat / tagihan PHM"></div>
+      <div><label for="lnNotes">Catatan</label><input id="lnNotes" value="${esc(l && l.notes || '')}"></div></div>
+    <div class="diff-box" id="lnCalc"></div></div>`, l ? 'Simpan perubahan' : 'Simpan draft', async () => {
+    const manual = $('lnMethod').value === 'MANUAL';
+    await api('fin_save_loan', { p_loan_id: l ? l.loan_id : null, p_loan_no: fv('lnNo'), p_lender_name: fv('lnLender'), p_lender_type: $('lnType').value,
+      p_kind: $('lnKind').value, p_project_id: $('lnProj').value, p_bank_id: Number($('lnBank').value) || null, p_principal: parseNum($('lnPrin').value),
+      p_is_existing: $('lnExist').checked, p_start_date: $('lnStart').value, p_interest_rate: Number(fv('lnRate').replace(',', '.')) || 0,
+      p_method: $('lnMethod').value, p_tenor_months: manual ? null : Number(fv('lnTenor')) || null, p_first_due_date: manual ? null : $('lnFirst').value || null,
+      p_pph23_interest: $('lnPph').checked, p_collateral: fv('lnColl') || null, p_notes: fv('lnNotes') || null });
+    toast('Pinjaman tersimpan sebagai draft, menunggu persetujuan PJ');
+  });
+  const calc = () => {
+    const ex = $('lnExist').checked, manual = $('lnMethod').value === 'MANUAL';
+    $('lnPrinLbl').textContent = ex ? 'Sisa pokok per tanggal cut-off (Rp)' : 'Plafon / pokok (Rp)';
+    $('lnStartLbl').textContent = ex ? 'Tanggal cut-off' : 'Tanggal akad';
+    $('lnTenorLbl').textContent = ex ? 'Sisa tenor (bulan)' : 'Tenor (bulan)';
+    $('lnSched').hidden = manual;
+    const P = parseNum($('lnPrin').value), r = (Number(fv('lnRate').replace(',', '.')) || 0) / 1200, n = Number(fv('lnTenor')) || 0, m = $('lnMethod').value;
+    let first = 0;
+    if (!manual && P && n) first = m === 'ANNUITY' ? (r ? P * r / (1 - Math.pow(1 + r, -n)) : P / n) : m === 'FLAT' ? P / n + P * r : P * r;
+    const acc = $('lnKind').value === 'LEASING' ? '2-1700 Hutang Leasing' : $('lnType').value === 'BANK' ? '2-1600 Hutang Bank' : '2-1610 Hutang Pinjaman Non-Bank';
+    $('lnCalc').innerHTML = `Dicatat di akun <b>${acc}</b>; bunga ke 6-1600 proyek terpilih.`
+      + (manual ? '<br>Metode manual: angsuran diisi sesuai tagihan / rekening koran tiap bulan.' : first ? `<br>Perkiraan angsuran ${m === 'INTEREST_ONLY' ? 'bunga per bulan' : 'pertama'}: <b>${rp(Math.round(first))}</b>` : '')
+      + (ex ? '<br>Saat disetujui PJ, sisa pokok dijurnal: Dr 3-9000 Ekuitas Saldo Awal / Cr hutang pinjaman.' : '<br>Setelah disetujui, catat pencairan dana lewat tombol Cairkan.');
+  };
+  $('lnWrap').addEventListener('input', calc); $('lnWrap').addEventListener('change', calc);
+  $('lnWrap').addEventListener('focusout', (ev) => { if (ev.target.id === 'lnPrin' && parseNum(ev.target.value)) ev.target.value = parseNum(ev.target.value).toLocaleString('id-ID'); });
+  calc();
+}
+
+function loanTxnForm(l, kind) {
+  const d = cache.dana;
+  if (!d.banks.length && kind !== 'DRAWDOWN') { toast('Belum ada rekening bank aktif. Tambahkan di menu Bank.', true); return; }
+  const nd = nextDue(l), out = num(l.outstanding_planned);
+  const bankSel = (id) => `<select id="${id}">${kind === 'DRAWDOWN' ? '<option value="">— Bukan ke rekening (pakai akun lawan) —</option>' : ''}${d.banks.map((b) => opt(b.bank_id, b.label, b.bank_id === l.bank_id)).join('')}</select>`;
+  let body = `<div id="ltWrap"><div class="row2"><div><label for="ltDate">Tanggal</label><input type="date" id="ltDate" value="${today()}" max="${today()}" min="${l.start_date}" required></div>
+    <div><label for="ltBank">${kind === 'DRAWDOWN' ? 'Dana masuk ke rekening' : 'Dibayar dari rekening'}</label>${bankSel('ltBank')}</div></div>`;
+  if (kind === 'DRAWDOWN') body += `<div id="ltCounterRow"><label for="ltCounter">Akun lawan (kalau dana tidak masuk rekening, mis. leasing langsung dibayar ke vendor)</label>
+      <select id="ltCounter"><option value="">—</option>${d.accounts.map((a) => opt(a.code, `${a.code} · ${a.name}`, a.code === '2-1100')).join('')}</select></div>
+    <div class="row2"><div><label for="ltPri">Nilai pencairan (Rp)</label><input id="ltPri" inputmode="numeric" value="${Math.max(0, num(l.principal) - out).toLocaleString('id-ID')}" required></div>
+      <div><label for="ltFee">Provisi / admin dipotong (Rp)</label><input id="ltFee" inputmode="numeric" value="0"></div></div>`;
+  else if (kind === 'INSTALLMENT') body += `<div class="row2"><div><label for="ltSeq">Angsuran ke- (sesuai jadwal)</label><select id="ltSeq"><option value="">Di luar jadwal</option>${l.schedule.filter((s) => !s.paid && !s.planned).map((s) => opt(s.seq, `Ke-${s.seq} · ${tgl(s.due_date)} · ${rp(num(s.principal) + num(s.interest))}`, nd && s.seq === nd.seq)).join('')}</select></div><div></div></div>
+    <div class="row2"><div><label for="ltPri">Pokok (Rp)</label><input id="ltPri" inputmode="decimal"></div><div><label for="ltInt">Bunga (Rp)</label><input id="ltInt" inputmode="decimal"></div></div>
+    <div class="row2"><div><label for="ltPph">PPh 23 atas bunga (Rp)</label><input id="ltPph" inputmode="decimal" ${l.pph23_interest ? '' : 'value="0"'}></div><div><label for="ltFee">Denda / biaya (Rp)</label><input id="ltFee" inputmode="decimal" value="0"></div></div>`;
+  else body += `<label for="ltFee">Biaya (Rp)</label><input id="ltFee" inputmode="numeric" required>`;
+  body += `<div class="row2"><div><label for="ltRef">No. referensi</label><input id="ltRef"></div><div><label for="ltNotes">Catatan</label><input id="ltNotes" placeholder="${kind === 'FEE' ? 'mis. provisi perpanjangan, notaris' : ''}"></div></div><div class="diff-box" id="ltCalc"></div></div>`;
+  const title = { DRAWDOWN: 'Pencairan', INSTALLMENT: 'Bayar Angsuran', FEE: 'Biaya Pinjaman' }[kind];
+  openCash(`${title} · ${l.lender_name} ${l.loan_no}`, `Sisa pokok ${rp(out)}. ${kind === 'DRAWDOWN' ? 'Disetujui PJ' : 'Disetujui APY'}, lalu jurnal langsung terposting ke proyek ${l.project_code}.`, body, 'Kirim untuk persetujuan', async () => {
+    const g = (id) => ($(id) ? parseNum($(id).value) : 0);
+    await api('fin_save_loan_txn', { p_loan_id: l.loan_id, p_kind: kind, p_txn_date: $('ltDate').value, p_principal: g('ltPri'), p_interest: g('ltInt'),
+      p_pph23: g('ltPph'), p_fee: g('ltFee'), p_bank_id: Number($('ltBank').value) || null, p_counter_account: $('ltCounter') ? $('ltCounter').value || null : null,
+      p_schedule_seq: $('ltSeq') ? Number($('ltSeq').value) || null : null, p_ref_no: fv('ltRef') || null, p_notes: fv('ltNotes') || null });
+    toast('Transaksi pinjaman tersimpan, menunggu persetujuan');
+  });
+  const fillSeq = () => {
+    const s = l.schedule.find((x) => String(x.seq) === $('ltSeq').value);
+    if (s) { $('ltPri').value = num(s.principal).toLocaleString('id-ID'); $('ltInt').value = num(s.interest).toLocaleString('id-ID'); }
+    if (l.pph23_interest && $('ltPph')) $('ltPph').value = Math.round(parseNum($('ltInt').value) * 0.15).toLocaleString('id-ID');
+  };
+  const calc = () => {
+    const g = (id) => ($(id) ? parseNum($(id).value) : 0);
+    if ($('ltCounterRow')) $('ltCounterRow').hidden = !!$('ltBank').value;
+    const pri = g('ltPri'), it = g('ltInt'), pph = g('ltPph'), fee = g('ltFee');
+    $('ltCalc').innerHTML = kind === 'DRAWDOWN' ? `Hutang bertambah <b>${rp(pri)}</b> · dana diterima ${rp(pri - fee)}${fee ? ` · provisi ${rp(fee)} ke 6-1610` : ''}`
+      : kind === 'INSTALLMENT' ? `Keluar dari rekening <b>${rp(pri + it + fee - pph)}</b> (pokok ${rp(pri)} + bunga ${rp(it)}${fee ? ' + biaya ' + rp(fee) : ''}${pph ? ' − PPh 23 ' + rp(pph) + ' disetor terpisah' : ''})<br>Sisa pokok setelah ini: <b class="${pri > out ? 'overdue' : ''}">${rp(out - pri)}</b>`
+      : `Beban 6-1610 <b>${rp(fee)}</b>`;
+  };
+  if ($('ltSeq')) { $('ltSeq').addEventListener('change', () => { fillSeq(); calc(); }); fillSeq(); }
+  if ($('ltInt') && l.pph23_interest) $('ltInt').addEventListener('input', () => { $('ltPph').value = Math.round(parseNum($('ltInt').value) * 0.15).toLocaleString('id-ID'); });
+  $('ltWrap').addEventListener('input', calc); $('ltWrap').addEventListener('change', calc); calc();
+}
+
+function loanView(l) {
+  const sched = l.schedule.length ? `<div class="scroll" style="max-height:280px;overflow-y:auto"><table class="rpt"><tr><th>Ke</th><th>Jatuh tempo</th><th class="num">Pokok</th><th class="num">Bunga</th><th class="num">Total</th><th>Status</th></tr>
+      ${l.schedule.map((s) => `<tr><td>${s.seq}</td><td>${tgl(s.due_date)}</td><td class="num">${rp(s.principal)}</td><td class="num">${rp(s.interest)}</td><td class="num">${rp(num(s.principal) + num(s.interest))}</td>
+        <td>${s.paid ? '<span class="badge ok">Dibayar</span>' : s.planned ? '<span class="badge warn">Menunggu APY</span>' : s.due_date < today() ? '<span class="badge warn">Lewat</span>' : ''}</td></tr>`).join('')}</table></div>`
+    : '<p class="muted small">Metode manual, tanpa jadwal.</p>';
+  const tx = l.txns.length ? `<div class="scroll"><table class="rpt"><tr><th>Tanggal</th><th>Jenis</th><th class="num">Pokok</th><th class="num">Bunga</th><th class="num">Biaya / PPh</th><th>Status</th></tr>
+      ${l.txns.map((x) => `<tr><td>${tgl(x.txn_date)}</td><td>${esc(LOAN_TXN[x.kind])}${x.schedule_seq ? ' ke-' + x.schedule_seq : ''}<div class="small muted">${esc(x.bank_label || x.counter_account || '')}${x.ref_no ? ' · ' + esc(x.ref_no) : ''}</div></td>
+        <td class="num">${num(x.principal_amount) ? rp(x.principal_amount) : '-'}</td><td class="num">${num(x.interest_amount) ? rp(x.interest_amount) : '-'}</td>
+        <td class="num">${num(x.fee_amount) ? rp(x.fee_amount) : ''}${num(x.pph23_amount) ? `<div class="small muted">PPh ${rp(x.pph23_amount)}</div>` : ''}</td>
+        <td>${x.status === 'APPROVED' ? '<span class="badge ok">Disetujui</span>' : x.status === 'PLANNED' ? '<span class="badge warn">Menunggu</span>' : `<span class="badge">Ditolak</span><div class="small overdue">${esc(x.reject_reason || '')}</div>`}</td></tr>`).join('')}</table></div>`
+    : '<p class="muted small">Belum ada transaksi.</p>';
+  openCash(`${l.lender_name} · ${l.loan_no}`, `${LOAN_KIND[l.kind]} · proyek ${l.project_code} · ${num(l.interest_rate)}% per tahun · ${LOAN_METHOD[l.method]} · akun ${l.account}`, `
+    <div class="diff-box">Plafon / pokok awal: <b>${rp(l.principal)}</b> · Sisa pokok: <b>${rp(l.outstanding)}</b>${l.collateral ? '<br>Jaminan: ' + esc(l.collateral) : ''}${l.notes ? '<br>' + esc(l.notes) : ''}</div>
+    <h3 style="margin-top:14px">Jadwal angsuran</h3>${sched}<h3 style="margin-top:14px">Transaksi</h3>${tx}`, null, null);
+}
+
+$('newLoanBtn').addEventListener('click', () => cache.dana && loanForm(null));
+$('page-dana').addEventListener('click', async (ev) => {
+  const d = cache.dana; if (!d) return;
+  const t = (attr) => ev.target.closest(`[${attr}]`);
+  const loan = (id) => d.loans.find((x) => String(x.loan_id) === String(id));
+  let el;
+  if ((el = t('data-loan-view'))) loanView(loan(el.dataset.loanView));
+  else if ((el = t('data-loan-edit'))) loanForm(loan(el.dataset.loanEdit));
+  else if ((el = t('data-loan-draw'))) loanTxnForm(loan(el.dataset.loanDraw), 'DRAWDOWN');
+  else if ((el = t('data-loan-pay'))) loanTxnForm(loan(el.dataset.loanPay), 'INSTALLMENT');
+  else if ((el = t('data-loan-fee'))) loanTxnForm(loan(el.dataset.loanFee), 'FEE');
+  else if ((el = t('data-loan-approve'))) {
+    const l = loan(el.dataset.loanApprove);
+    if (!confirm(`Setujui pinjaman ${l.lender_name} ${l.loan_no} (${rp(l.principal)})?${l.is_existing ? ' Sisa pokok awal langsung dijurnal.' : ''}`)) return;
+    el.disabled = true;
+    try { await api('fin_decide_loan', { p_loan_id: l.loan_id, p_approve: true, p_reason: null }); toast('Pinjaman disetujui'); loadDana(); }
+    catch (e) { toast(e.message, true); el.disabled = false; }
+  } else if ((el = t('data-loan-reject'))) {
+    const id = Number(el.dataset.loanReject);
+    openCash('Tolak Pinjaman', '', '<label for="cReason">Alasan penolakan</label><input id="cReason" required>', 'Tolak', async () => {
+      await api('fin_decide_loan', { p_loan_id: id, p_approve: false, p_reason: fv('cReason') }); toast('Pinjaman ditolak');
+    });
+  } else if ((el = t('data-ltx-approve'))) {
+    el.disabled = true;
+    try { await api('fin_decide_loan_txn', { p_txn_id: Number(el.dataset.ltxApprove), p_approve: true, p_reason: null }); toast('Transaksi disetujui, jurnal terposting'); loadDana(); }
+    catch (e) { toast(e.message, true); el.disabled = false; }
+  } else if ((el = t('data-ltx-reject'))) {
+    const id = Number(el.dataset.ltxReject);
+    openCash('Tolak Transaksi Pinjaman', '', '<label for="cReason">Alasan penolakan</label><input id="cReason" required>', 'Tolak', async () => {
+      await api('fin_decide_loan_txn', { p_txn_id: id, p_approve: false, p_reason: fv('cReason') }); toast('Transaksi ditolak');
+    });
+  }
+});
+
 // ---------- laporan keuangan ----------
 const RPT_TITLE = { TB: 'Neraca Saldo', GL: 'Buku Besar', PL: 'Laba Rugi', BS: 'Neraca', CF: 'Arus Kas' };
 let rptKind = 'TB', rptExportRows = null, rptMeta = null;
@@ -1954,7 +2154,7 @@ $('rptExport').addEventListener('click', async () => {
   } catch (e) { toast(e.message, true); }
 });
 
-const loaders = { pajak: loadPajak, payroll: loadPayroll, ar: loadAR, laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
+const loaders = { dana: loadDana, pajak: loadPajak, payroll: loadPayroll, ar: loadAR, laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
 
 // ---------- start ----------
 (function init() {
