@@ -32,7 +32,8 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/013_asset_disposal.sql` | Pelepasan aset tetap (dijual / dihapus): diajukan FIN-AST, disetujui PJ, jurnal laba/rugi | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/014_bank_fin_jv.sql` | Menu Bank bisa dibuka FIN-JV (approver PJ tidak perlu FIN-AP); input tetap FIN-AP | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/015_tax.sql` | Menu Pajak (PIC FIN-TAX): rekap PPN (masa = tanggal faktur), PPh 21, PPh 23, PPh dipotong klien, tanggal faktur | ✅ Sudah dijalankan (27 Nov 2026) |
-| `sql/migrations/016_funding.sql` | Pendanaan: pinjaman bank / non-bank (modal kerja, leasing), jadwal angsuran, bunga per proyek, arus kas pendanaan | ✅ Sudah dijalankan |
+| `sql/migrations/016_funding.sql` | Pendanaan: pinjaman bank / non-bank (modal kerja, leasing), jadwal angsuran, bunga per proyek, arus kas pendanaan | ✅ Sudah dijalankan (28 Nov 2026) |
+| `sql/migrations/017_voucher_signature.sql` | Bukti Bank Keluar (BBK) PDF dengan QR tanda tangan digital + halaman verifikasi publik `verifikasi.html` | ⏳ Belum dijalankan |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -300,3 +301,22 @@ Menu **Pendanaan** (input `FIN-AP`; bisa dilihat `FIN-JV`) untuk pinjaman **bank
 - Metode jadwal: **Anuitas**, **Flat**, **Bunga saja (pokok di akhir)**, atau **Manual** (angsuran diisi sesuai tagihan / rekening koran, cocok untuk KMK rekening koran). Nilai angsuran tetap bisa disesuaikan dengan tagihan aktual.
 - Pencairan tidak boleh melebihi plafon; pokok angsuran tidak boleh melebihi sisa pokok. Pinjaman otomatis **Lunas** saat sisa pokok 0 (pencairan baru membuka lagi).
 - PPh 23 atas bunga pinjaman non-bank ikut muncul di menu **Pajak** (PPh 23 dipotong BIMA). Di laporan **Arus Kas**, jurnal pinjaman masuk kategori **Pendanaan**.
+
+### Bukti Bank Keluar + tanda tangan digital QR (migration 017)
+
+Tombol **Cetak BBK** muncul di transaksi uang keluar yang sudah selesai:
+
+| Menu | Transaksi | Muncul saat |
+|---|---|---|
+| Pembayaran | Uang muka & pelunasan vendor | Lunas |
+| Kas & Kasbon | Isi kas site, pengeluaran langsung, kasbon | Dibayar / ditutup |
+| Bank | Biaya admin, pajak bunga, transfer antar rekening, pengeluaran lain | Disetujui PJ |
+| Payroll | Gaji bersih, setoran BPJS, setoran PPh 21 | Disetujui APY |
+| Pendanaan (detail pinjaman) | Angsuran & biaya pinjaman | Disetujui APY |
+
+- PDF A4: kop BIMA, nomor **BBK/yyyy/mm/nnnn**, penerima, rekening, proyek, rincian, terbilang, baris jurnal, dan **QR per penandatangan** (penginput, approver, pembayar).
+- Tanda tangan diambil dari jejak approval yang sudah ada: tidak ada langkah tanda tangan tambahan. Nomor & QR terbit saat pertama kali dicetak dan tetap sama saat dicetak ulang.
+- Yang bisa mencetak: pemegang akses menunya (PIC). Kas & Kasbon untuk non-HO: hanya pengaju, penerima kasbon, atau pemegang kas.
+- QR membuka **`verifikasi.html?k=SF-…`** (tanpa login): status **Sah** / **Tidak berlaku** / **Tidak ditemukan**, nomor bukti, jenis, tanggal, penerima, nilai, rekening, proyek, dan semua penandatangan. Kode QR acak 64 bit.
+- Library PDF (jsPDF 2.5.1) dan QR (qrcode-generator 1.4.4) dimuat dari jsDelivr saat tombol diklik pertama kali.
+

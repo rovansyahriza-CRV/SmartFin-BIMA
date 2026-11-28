@@ -680,6 +680,7 @@ async function loadBayar() {
           action = p.docs_missing ? holdMsg : `<button type="button" class="btn primary small" data-approve-pay="${esc(p.schedule_id)}">Setujui</button>`;
         }
         if (p.status === 'APPROVED') action = p.docs_missing ? holdMsg : `<button type="button" class="btn primary small" data-pay="${esc(p.schedule_id)}">Tandai Lunas</button>`;
+        if (p.status === 'PAID') action = voucherBtn('payment_schedule', p.schedule_id);
         action = `<div class="row-gap">${docBtn}${action}</div>`;
         const who = p.status === 'PAID' ? `<div class="small muted">${tgl(p.paid_at)} · ${esc(p.bank_label || '')} ${p.payment_ref ? '· ' + esc(p.payment_ref) : ''}</div>`
           : p.approved_by ? `<div class="small muted">disetujui ${esc(p.approved_by)}</div>` : '';
@@ -914,6 +915,7 @@ async function loadKas() {
           acts.push(`<button type="button" class="btn ghost small" data-reject-req="${esc(r.request_id)}">Tolak</button>`);
         }
         if (r.status === 'APPROVED' && d.isHO) acts.push(`<button type="button" class="btn primary small" data-pay-req="${esc(r.request_id)}">Tandai Dibayar</button>`);
+        if (['PAID', 'CLOSED'].includes(r.status)) acts.push(voucherBtn('cash_request', r.request_id));
         if (r.kind === 'KASBON' && r.status === 'PAID') {
           if (d.isHO || r.employee_id === d.me) acts.push(`<button type="button" class="btn primary small" data-nota-kasbon="${esc(r.request_id)}">+ Nota</button>`);
           if (d.isHO) acts.push(`<button type="button" class="btn ghost small" data-close-kasbon="${esc(r.request_id)}">Tutup kasbon</button>`);
@@ -1158,7 +1160,8 @@ function renderBank(b) {
     (rows.length ? rows.map((t) => {
       const sign = t.kind === 'TRANSFER' ? '' : BTX_IN.includes(t.kind) ? '+' : '−';
       const acts = t.status === 'PLANNED' && canPJ
-        ? `<button type="button" class="btn primary small" data-approve-btx="${esc(t.txn_id)}">Setujui</button><button type="button" class="btn ghost small" data-reject-btx="${esc(t.txn_id)}">Tolak</button>` : '';
+        ? `<button type="button" class="btn primary small" data-approve-btx="${esc(t.txn_id)}">Setujui</button><button type="button" class="btn ghost small" data-reject-btx="${esc(t.txn_id)}">Tolak</button>`
+        : t.status === 'APPROVED' && ['ADMIN_FEE', 'INTEREST_TAX', 'TRANSFER', 'OTHER_OUT'].includes(t.kind) ? voucherBtn('bank_txn', t.txn_id) : '';
       const st = t.status === 'PLANNED' ? '<span class="badge warn">Menunggu PJ</span>' : t.status === 'APPROVED' ? '<span class="badge ok">Disetujui</span>' : '<span class="badge">Ditolak</span>';
       const who = t.status === 'REJECTED' ? `<div class="small overdue">${esc(t.reject_reason || '')}</div>` : t.approved_by ? `<div class="small muted">${esc(t.approved_by)}</div>` : `<div class="small muted">oleh ${esc(t.requested_by || '')}</div>`;
       return `<tr><td>${tgl(t.txn_date)}</td><td>${esc(BTX_LABEL[t.kind])}${t.account_code ? `<div class="small muted">${esc(t.account_code)} ${esc(t.account_name || '')}</div>` : ''}</td>
@@ -1608,7 +1611,7 @@ function renderPayroll(d) {
   $('prPayTable').innerHTML = d.payments.length ? '<tr><th>Tanggal</th><th>Jenis</th><th>Rekening</th><th class="num">Nilai</th><th>Status</th><th></th></tr>' +
     d.payments.map((p) => `<tr><td>${tgl(p.pay_date)}</td><td>${esc(PR_KIND[p.kind])}${p.ref_no ? `<div class="small muted">${esc(p.ref_no)}</div>` : ''}</td><td>${esc(p.bank_label)}</td><td class="num">${rp(p.amount)}</td>
       <td>${p.status === 'APPROVED' ? `<span class="badge ok">Disetujui</span><div class="small muted">${esc(p.approved_by || '')}</div>` : p.status === 'PLANNED' ? `<span class="badge warn">Menunggu APY</span><div class="small muted">oleh ${esc(p.requested_by || '')}</div>` : `<span class="badge">Ditolak</span><div class="small overdue">${esc(p.reject_reason || '')}</div>`}</td>
-      <td><div class="row-gap" style="flex-wrap:nowrap">${p.status === 'PLANNED' && apy ? `<button type="button" class="btn primary small" data-prp-approve="${p.payment_id}">Setujui</button><button type="button" class="btn ghost small" data-prp-reject="${p.payment_id}">Tolak</button>` : ''}</div></td></tr>`).join('') : '';
+      <td><div class="row-gap" style="flex-wrap:nowrap">${p.status === 'PLANNED' && apy ? `<button type="button" class="btn primary small" data-prp-approve="${p.payment_id}">Setujui</button><button type="button" class="btn ghost small" data-prp-reject="${p.payment_id}">Tolak</button>` : p.status === 'APPROVED' ? voucherBtn('payroll_payment', p.payment_id) : ''}</div></td></tr>`).join('') : '';
   $('prEmpCard').hidden = !d.detail;
   renderPrEmp();
 }
@@ -1948,7 +1951,7 @@ function loanView(l) {
       ${l.txns.map((x) => `<tr><td>${tgl(x.txn_date)}</td><td>${esc(LOAN_TXN[x.kind])}${x.schedule_seq ? ' ke-' + x.schedule_seq : ''}<div class="small muted">${esc(x.bank_label || x.counter_account || '')}${x.ref_no ? ' · ' + esc(x.ref_no) : ''}</div></td>
         <td class="num">${num(x.principal_amount) ? rp(x.principal_amount) : '-'}</td><td class="num">${num(x.interest_amount) ? rp(x.interest_amount) : '-'}</td>
         <td class="num">${num(x.fee_amount) ? rp(x.fee_amount) : ''}${num(x.pph23_amount) ? `<div class="small muted">PPh ${rp(x.pph23_amount)}</div>` : ''}</td>
-        <td>${x.status === 'APPROVED' ? '<span class="badge ok">Disetujui</span>' : x.status === 'PLANNED' ? '<span class="badge warn">Menunggu</span>' : `<span class="badge">Ditolak</span><div class="small overdue">${esc(x.reject_reason || '')}</div>`}</td></tr>`).join('')}</table></div>`
+        <td>${x.status === 'APPROVED' ? '<span class="badge ok">Disetujui</span>' + (['INSTALLMENT', 'FEE'].includes(x.kind) ? '<div style="margin-top:4px">' + voucherBtn('loan_txn', x.txn_id) + '</div>' : '') : x.status === 'PLANNED' ? '<span class="badge warn">Menunggu</span>' : `<span class="badge">Ditolak</span><div class="small overdue">${esc(x.reject_reason || '')}</div>`}</td></tr>`).join('')}</table></div>`
     : '<p class="muted small">Belum ada transaksi.</p>';
   openCash(`${l.lender_name} · ${l.loan_no}`, `${LOAN_KIND[l.kind]} · proyek ${l.project_code} · ${num(l.interest_rate)}% per tahun · ${LOAN_METHOD[l.method]} · akun ${l.account}`, `
     <div class="diff-box">Plafon / pokok awal: <b>${rp(l.principal)}</b> · Sisa pokok: <b>${rp(l.outstanding)}</b>${l.collateral ? '<br>Jaminan: ' + esc(l.collateral) : ''}${l.notes ? '<br>' + esc(l.notes) : ''}</div>
@@ -2155,6 +2158,142 @@ $('rptExport').addEventListener('click', async () => {
     XLSX.utils.book_append_sheet(wb, ws, RPT_TITLE[rptKind].slice(0, 31));
     XLSX.writeFile(wb, `SmartFin_${RPT_TITLE[rptKind].replace(/\s+/g, '_')}_${$('rptTo').value || today()}.xlsx`);
   } catch (e) { toast(e.message, true); }
+});
+
+// ---------- bukti bank keluar (PDF + QR tanda tangan) ----------
+const voucherBtn = (src, id) => `<button type="button" class="btn ghost small" data-voucher="${src}:${esc(id)}" title="Cetak Bukti Bank Keluar dengan QR tanda tangan">Cetak BBK</button>`;
+const loadScript = (src, test) => new Promise((res, rej) => {
+  if (test()) return res();
+  const s = document.createElement('script');
+  s.src = src; s.onload = () => res(); s.onerror = () => rej(new Error('Gagal memuat modul PDF. Cek koneksi internet.'));
+  document.head.appendChild(s);
+});
+let pdfLibLoading = null;
+const loadPdfLib = () => pdfLibLoading || (pdfLibLoading = Promise.all([
+  loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', () => window.jspdf),
+  loadScript('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', () => window.qrcode)
+]).catch((e) => { pdfLibLoading = null; throw e; }));
+let logoData = null;
+async function logoDataUrl() {
+  if (logoData) return logoData;
+  const blob = await (await fetch('logo-bima.png')).blob();
+  logoData = await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+  return logoData;
+}
+const verifyUrl = (code) => new URL('verifikasi.html?k=' + encodeURIComponent(code), location.href.split('#')[0]).href;
+
+function terbilang(n) {
+  n = Math.floor(Math.abs(num(n)));
+  const s = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+  const f = (x) => x < 12 ? s[x] : x < 20 ? f(x - 10) + ' belas' : x < 100 ? f(Math.floor(x / 10)) + ' puluh ' + f(x % 10)
+    : x < 200 ? 'seratus ' + f(x - 100) : x < 1000 ? f(Math.floor(x / 100)) + ' ratus ' + f(x % 100)
+    : x < 2000 ? 'seribu ' + f(x - 1000) : x < 1e6 ? f(Math.floor(x / 1000)) + ' ribu ' + f(x % 1000)
+    : x < 1e9 ? f(Math.floor(x / 1e6)) + ' juta ' + f(x % 1e6) : x < 1e12 ? f(Math.floor(x / 1e9)) + ' miliar ' + f(x % 1e9)
+    : f(Math.floor(x / 1e12)) + ' triliun ' + f(x % 1e12);
+  const t = (n === 0 ? 'nol' : f(n)).replace(/\s+/g, ' ').trim();
+  return t.charAt(0).toUpperCase() + t.slice(1) + ' rupiah';
+}
+const wita = (ts) => {
+  if (!ts) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ts)) ts += 'T00:00:00+08:00';
+  const d = new Date(ts);
+  const p = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Makassar', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d);
+  const g = (t) => (p.find((x) => x.type === t) || {}).value || '';
+  const time = `${g('hour')}:${g('minute')}`;
+  return `${g('day')} ${g('month')} ${g('year')}${time === '00:00' ? '' : ' ' + time + ' WITA'}`;
+};
+
+async function printVoucher(src, id) {
+  const [v] = await Promise.all([api('fin_voucher', { p_source: src, p_id: Number(id) }), loadPdfLib()]);
+  const logo = await logoDataUrl().catch(() => null);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, M = 16, CW = W - 2 * M;
+  const INK = [20, 22, 25], MUTED = [107, 111, 118], BRAND = [217, 78, 52], LINE = [226, 223, 216];
+  const rupiah = (x) => 'Rp ' + num(x).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const txt = (t, x, y, o = {}) => { doc.setFont('helvetica', o.bold ? 'bold' : 'normal'); doc.setFontSize(o.size || 9.5); doc.setTextColor(...(o.color || INK)); doc.text(String(t ?? ''), x, y, o.align ? { align: o.align } : undefined); };
+
+  // kop
+  if (logo) doc.addImage(logo, 'PNG', M, 12, 16, 16);
+  txt('Bilal Mitra Aryatama', M + 20, 18, { bold: true, size: 12 });
+  txt('SmartFin · Smart Financial System', M + 20, 23.5, { color: MUTED, size: 8.5 });
+  txt('BUKTI BANK KELUAR', W - M, 18, { bold: true, size: 14, align: 'right', color: BRAND });
+  txt(v.voucher_no, W - M, 24, { bold: true, size: 10, align: 'right' });
+  doc.setDrawColor(...BRAND); doc.setLineWidth(0.6); doc.line(M, 31, W - M, 31);
+
+  // info
+  let y = 39;
+  const info = [['Jenis transaksi', v.kind_label], ['Tanggal bayar', wita(v.date)], ['Dibayar kepada', v.payee], ['Dari rekening', v.bank_label],
+    ['Kode proyek', v.project_code || '-'], ['No. referensi', v.ref_no || '-']];
+  info.forEach(([k, val], i) => {
+    const x = i % 2 ? M + CW / 2 + 2 : M, yy = y + Math.floor(i / 2) * 6.5;
+    txt(k, x, yy, { color: MUTED, size: 8.5 }); txt(doc.splitTextToSize(String(val || '-'), CW / 2 - 34)[0], x + 30, yy, { bold: true, size: 9.5 });
+  });
+  y += 3 * 6.5 + 1;
+  if (v.description) {
+    txt('Keterangan', M, y, { color: MUTED, size: 8.5 });
+    const lines = doc.splitTextToSize(v.description, CW - 30).slice(0, 3);
+    txt(lines.join('\n'), M + 30, y, { size: 9.5 }); y += lines.length * 4.6 + 2;
+  }
+
+  // rincian
+  y += 3;
+  const tableHead = (cols, yy) => { doc.setFillColor(243, 242, 238); doc.rect(M, yy - 4.5, CW, 7, 'F'); cols.forEach(([t, x, a]) => txt(t, x, yy, { bold: true, size: 8.5, color: MUTED, align: a })); };
+  tableHead([['Rincian', M + 3], ['Jumlah', W - M - 3, 'right']], y);
+  y += 7;
+  (v.lines || []).forEach((l) => { txt(l.label, M + 3, y); txt((num(l.amount) < 0 ? '- ' : '') + rupiah(Math.abs(num(l.amount))), W - M - 3, y, { align: 'right' }); doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(M, y + 2.2, W - M, y + 2.2); y += 6.5; });
+  doc.setFillColor(253, 237, 232); doc.rect(M, y - 4.3, CW, 8, 'F');
+  txt('JUMLAH DIBAYAR', M + 3, y + 0.8, { bold: true, size: 9.5 }); txt(rupiah(v.amount), W - M - 3, y + 0.8, { bold: true, size: 11, align: 'right', color: BRAND });
+  y += 8.5;
+  const tb = doc.splitTextToSize('Terbilang: ' + terbilang(v.amount), CW - 6);
+  txt(tb.join('\n'), M + 3, y, { size: 8.5, color: MUTED }); y += tb.length * 4 + 5;
+
+  // jurnal
+  if ((v.journal || []).length) {
+    txt('Jurnal' + (v.journal_no ? ' · ' + v.journal_no : ''), M, y, { bold: true, size: 9.5 }); y += 5;
+    tableHead([['Akun', M + 3], ['Nama akun', M + 24], ['Debit', W - M - 36, 'right'], ['Kredit', W - M - 3, 'right']], y); y += 7;
+    v.journal.forEach((j) => {
+      txt(j.account, M + 3, y, { size: 8.8 }); txt(doc.splitTextToSize(j.name || '', 95)[0], M + 24, y, { size: 8.8 });
+      txt(num(j.debit) ? rupiah(j.debit) : '', W - M - 36, y, { size: 8.8, align: 'right' }); txt(num(j.credit) ? rupiah(j.credit) : '', W - M - 3, y, { size: 8.8, align: 'right' });
+      doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(M, y + 2.2, W - M, y + 2.2); y += 6;
+    });
+    y += 4;
+  }
+
+  // tanda tangan QR
+  const signs = v.signs || [];
+  const perRow = Math.min(4, Math.max(signs.length, 1)), gap = 4, bw = (CW - gap * (perRow - 1)) / perRow, bh = 56;
+  if (y + 8 + bh * Math.ceil(signs.length / perRow) > 280) { doc.addPage(); y = 20; }
+  txt('Tanda tangan digital', M, y, { bold: true, size: 9.5 });
+  txt('Pindai QR untuk memverifikasi keaslian', W - M, y, { size: 8, color: MUTED, align: 'right' }); y += 4;
+  signs.forEach((g, i) => {
+    const x = M + (i % perRow) * (bw + gap), yy = y + Math.floor(i / perRow) * (bh + gap);
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.3); doc.roundedRect(x, yy, bw, bh, 2, 2, 'S');
+    txt(doc.splitTextToSize(g.role, bw - 4)[0], x + bw / 2, yy + 5.5, { size: 7.8, color: MUTED, align: 'center' });
+    const qr = window.qrcode(0, 'M'); qr.addData(verifyUrl(g.code)); qr.make();
+    const n = qr.getModuleCount(), qs = Math.min(30, bw - 8), cell = qs / n, qx = x + (bw - qs) / 2, qy = yy + 8;
+    doc.setFillColor(0, 0, 0);
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) doc.rect(qx + c * cell, qy + r * cell, cell + 0.02, cell + 0.02, 'F');
+    txt(doc.splitTextToSize(g.name, bw - 4)[0], x + bw / 2, qy + qs + 6, { bold: true, size: 9, align: 'center' });
+    txt(wita(g.at), x + bw / 2, qy + qs + 10.5, { size: 7.5, color: MUTED, align: 'center' });
+    doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(...MUTED); doc.text(g.code, x + bw / 2, qy + qs + 14.5, { align: 'center' });
+  });
+
+  // footer
+  doc.setDrawColor(...LINE); doc.line(M, 284, W - M, 284);
+  txt(`Dokumen elektronik SmartFin, sah tanpa tanda tangan basah. Dicetak ${v.printed_by || ''} · ${wita(new Date().toISOString())}`, M, 288.5, { size: 7.2, color: MUTED });
+  txt(`Terbit ${wita(v.issued_at)}`, W - M, 288.5, { size: 7.2, color: MUTED, align: 'right' });
+  doc.save(`${v.voucher_no.replace(/\//g, '-')}.pdf`);
+  return v;
+}
+document.addEventListener('click', async (ev) => {
+  const b = ev.target.closest('[data-voucher]');
+  if (!b) return;
+  const [src, id] = b.dataset.voucher.split(':');
+  b.disabled = true; const old = b.textContent; b.textContent = 'Menyiapkan…';
+  try { const v = await printVoucher(src, id); toast(`${v.voucher_no} diunduh`); }
+  catch (e) { toast(e.message, true); }
+  finally { b.disabled = false; b.textContent = old; }
 });
 
 const loaders = { panduan: () => {}, dana: loadDana, pajak: loadPajak, payroll: loadPayroll, ar: loadAR, laporan: loadLaporan, dashboard: loadDashboard, ap: loadAP, bayar: loadBayar, bank: loadBank, kas: loadKas, jurnal: loadJurnal, budget: loadBudget, aset: loadAset };
