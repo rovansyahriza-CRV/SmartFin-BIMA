@@ -34,6 +34,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/015_tax.sql` | Menu Pajak (PIC FIN-TAX): rekap PPN (masa = tanggal faktur), PPh 21, PPh 23, PPh dipotong klien, tanggal faktur | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/016_funding.sql` | Pendanaan: pinjaman bank / non-bank (modal kerja, leasing), jadwal angsuran, bunga per proyek, arus kas pendanaan | ✅ Sudah dijalankan (28 Nov 2026) |
 | `sql/migrations/017_voucher_signature.sql` | Bukti Bank Keluar (BBK) PDF dengan QR tanda tangan digital + halaman verifikasi publik `verifikasi.html` | ✅ Sudah dijalankan (28 Nov 2026) |
+| `sql/migrations/018_invoice_cancel_recheck.sql` | Hutang Vendor: batalkan invoice yang belum di-approve, cek ulang status, cek ulang otomatis saat penerimaan SMMS berubah | ⏳ Belum dijalankan |
 
 ### Rencana jurnal otomatis (migration 002)
 
@@ -320,4 +321,11 @@ Tombol **Cetak BBK** muncul di transaksi uang keluar yang sudah selesai:
 - Yang bisa mencetak: pemegang akses menunya (PIC). Kas & Kasbon untuk non-HO: hanya pengaju, penerima kasbon, atau pemegang kas.
 - QR membuka **`verifikasi.html?k=SF-…`** (tanpa login): status **Sah** / **Tidak berlaku** / **Tidak ditemukan**, nomor bukti, jenis, tanggal, penerima, nilai, rekening, proyek, dan semua penandatangan. Kode QR acak 64 bit.
 - Library PDF (jsPDF 2.5.1) dan QR (qrcode-generator 1.4.4) dimuat dari jsDelivr saat tombol diklik pertama kali.
+
+### Batalkan & cek ulang invoice vendor (migration 018)
+
+- **Batalkan** (FIN-AP): untuk invoice RECEIVED / MATCHED / HOLD, alasan wajib. Invoice batal tidak dihitung di 3-way match, jadi barangnya bisa diinvoice ulang (nomor yang sama boleh). Invoice yang sudah di-approve tidak bisa dibatalkan: koreksi lewat jurnal penyesuaian.
+- **Cek ulang** (FIN-AP, di invoice HOLD): hitung ulang 3-way match dan kelengkapan dokumen.
+- **Otomatis**: setiap penerimaan barang di SMMS ditambah / diubah / dihapus, invoice terbuka di baris PO itu dicek ulang. Kalau cek ulang gagal, transaksi SMMS tetap jalan dan error dicatat di `finance.auto_journal_error` (`RECHECK`).
+- Nomor invoice ganda dari vendor yang sama ditolak dengan pesan jelas (kecuali yang lama sudah dibatalkan).
 

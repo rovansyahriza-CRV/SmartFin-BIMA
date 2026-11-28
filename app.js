@@ -420,10 +420,15 @@ async function loadAP() {
     $('invTable').innerHTML = '<tr><th>No. Invoice</th><th>Vendor / PO</th><th>Tanggal</th><th>Jatuh tempo</th><th class="num">Total</th><th>Status</th><th></th></tr>' +
       (d.invoices.length ? d.invoices.map((i) => {
         const canApprove = i.status === 'MATCHED' && hasAnyAuthor('AI');
+        const open = ['RECEIVED', 'MATCHED', 'HOLD'].includes(i.status);
+        const extra = (i.status === 'HOLD' ? `<button type="button" class="btn ghost small" data-recheck-inv="${esc(i.invoice_id)}" title="Cek ulang 3-way match dan dokumen">Cek ulang</button>` : '') +
+          (open ? `<button type="button" class="btn ghost small" data-cancel-inv="${esc(i.invoice_id)}" data-title="${esc(i.invoice_no + ' · ' + i.vendor_name + ' · ' + rp(i.total_amount))}">Batalkan</button>` : '');
+        const info = i.status === 'CANCELLED' ? `<div class="small muted">dibatalkan ${esc(i.cancelled_by || '')}: ${esc(i.cancel_reason || '')}</div>`
+          : (i.hold_reason ? `<div class="small muted">${esc(i.hold_reason)}</div>` : '') + (i.approved_by ? `<div class="small muted">oleh ${esc(i.approved_by)}</div>` : '');
         return `<tr><td><b>${esc(i.invoice_no)}</b></td><td>${esc(i.vendor_name)}<br><span class="muted">${esc(i.po_number)}</span></td><td>${tgl(i.invoice_date)}</td><td>${tgl(i.due_date)}</td><td class="num">${rp(i.total_amount)}</td>
-          <td>${statusBadge(i.status)}${i.hold_reason ? `<div class="small muted">${esc(i.hold_reason)}</div>` : ''}${i.approved_by ? `<div class="small muted">oleh ${esc(i.approved_by)}</div>` : ''}</td>
+          <td>${statusBadge(i.status)}${info}</td>
           <td><div class="row-gap"><button type="button" class="btn ghost small" data-docs-inv="${esc(i.invoice_id)}" data-title="${esc(i.invoice_no + ' · ' + i.vendor_name + ' · ' + i.po_number)}">Dokumen${i.docs_missing ? ' !' : ' ✓'}</button>
-          ${canApprove ? `<button type="button" class="btn primary small" data-approve-inv="${esc(i.invoice_id)}">Approve</button>` : ''}</div></td></tr>`;
+          ${canApprove ? `<button type="button" class="btn primary small" data-approve-inv="${esc(i.invoice_id)}">Approve</button>` : ''}${extra}</div></td></tr>`;
       }).join('') : emptyRow(7, 'Belum ada invoice'));
 
     $('poTable').innerHTML = '<tr><th>PO</th><th>Vendor</th><th>Proyek</th><th>Item</th><th class="num">Qty PO</th><th class="num">Diterima</th><th class="num">Ditagih</th><th class="num">Harga</th><th>Status</th></tr>' +
@@ -434,6 +439,27 @@ async function loadAP() {
 $('invTable').addEventListener('click', async (ev) => {
   const dd = ev.target.closest('[data-docs-inv]');
   if (dd) { openDocs('INVOICE', Number(dd.dataset.docsInv), dd.dataset.title); return; }
+  const rc = ev.target.closest('[data-recheck-inv]');
+  if (rc) {
+    rc.disabled = true;
+    try {
+      const r = await api('fin_recheck_invoice', { p_invoice_id: Number(rc.dataset.recheckInv) });
+      toast(r.status === 'MATCHED' ? 'Sekarang MATCHED, siap di-approve' : 'Masih HOLD: ' + (r.hold_reason || '-'), r.status !== 'MATCHED');
+      loadAP();
+    } catch (e) { toast(e.message, true); rc.disabled = false; }
+    return;
+  }
+  const cb = ev.target.closest('[data-cancel-inv]');
+  if (cb) {
+    openCash('Batalkan Invoice', cb.dataset.title, `
+      <label for="cReason">Alasan pembatalan</label><input id="cReason" placeholder="mis. Harga salah, vendor kirim invoice revisi" required>
+      <p class="small muted">Invoice batal tidak dihitung di 3-way match. Barang di PO ini bisa diinvoice ulang, juga dengan nomor yang sama. Dokumen yang sudah diunggah tetap tersimpan sebagai arsip.</p>`,
+      'Batalkan invoice', async () => {
+        await api('fin_cancel_invoice', { p_invoice_id: Number(cb.dataset.cancelInv), p_reason: fv('cReason') });
+        toast('Invoice dibatalkan');
+      });
+    return;
+  }
   const b = ev.target.closest('[data-approve-inv]');
   if (!b) return;
   if (!confirm('Approve invoice ini? Hutang usaha akan diakui dan jurnalnya dibuat otomatis.')) return;
