@@ -33,7 +33,7 @@ Smart Financial System BIMA. Sistem ini terintegrasi dengan **SMMS** (material &
 | `sql/migrations/014_bank_fin_jv.sql` | Menu Bank bisa dibuka FIN-JV (approver PJ tidak perlu FIN-AP); input tetap FIN-AP | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/015_tax.sql` | Menu Pajak (PIC FIN-TAX): rekap PPN (masa = tanggal faktur), PPh 21, PPh 23, PPh dipotong klien, tanggal faktur | ✅ Sudah dijalankan (27 Nov 2026) |
 | `sql/migrations/016_funding.sql` | Pendanaan: pinjaman bank / non-bank (modal kerja, leasing), jadwal angsuran, bunga per proyek, arus kas pendanaan | ✅ Sudah dijalankan (28 Nov 2026) |
-| `sql/migrations/017_voucher_signature.sql` | Bukti Bank Keluar (BBK) PDF dengan QR tanda tangan digital + halaman verifikasi publik `verifikasi.html` | ⏳ Belum dijalankan |
+| `sql/migrations/017_voucher_signature.sql` | Bukti Bank Keluar (BBK) PDF dengan QR tanda tangan digital + halaman verifikasi publik `verifikasi.html` | ✅ Sudah dijalankan (28 Nov 2026) |
 
 ### Rencana jurnal otomatis (migration 002)
 

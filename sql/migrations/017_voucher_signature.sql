@@ -1,6 +1,6 @@
 -- =====================================================================
 -- SmartFin BIMA — Migration 017: Bukti Bank Keluar (voucher) + tanda tangan digital QR
--- Status : ⏳ Belum dijalankan
+-- Status : ✅ Sudah dijalankan (28 Nov 2026)
 --
 -- Setiap transaksi uang keluar yang sudah selesai disetujui bisa dicetak sebagai Bukti Bank Keluar (BBK) PDF:
 --   payment_schedule  uang muka & pelunasan vendor (status PAID)
